@@ -30,7 +30,10 @@ import org.omg.PortableInterceptor.Interceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author biezhi
@@ -51,6 +54,8 @@ public class BladeServer {
     private EventLoopGroup bossGroup, workerGroup;
     private Set<String> pkgs = new HashSet<>(Arrays.asList("com.blade"));
 
+    private RouteBuilder routeBuilder;
+
     public BladeServer(Blade blade, String[] args) {
         this.blade = blade;
         this.address = blade.address();
@@ -60,6 +65,7 @@ public class BladeServer {
 
     public void initAndStart(Class<?> mainCls) {
         Thread thread = new Thread(() -> {
+            long initStart = System.currentTimeMillis();
             log.info("Blade environment: jdk.version\t\t=> {}", System.getProperty("java.version"));
             log.info("Blade environment: user.dir\t\t\t=> {}", System.getProperty("user.dir"));
             log.info("Blade environment: java.io.tmpdir\t=> {}", System.getProperty("java.io.tmpdir"));
@@ -68,10 +74,6 @@ public class BladeServer {
             log.info("Blade environment: classpath\t\t=> {}", CLASSPATH);
 
             try {
-                BannerStarter.printStart();
-
-                long initStart = System.currentTimeMillis();
-
                 // 1. 加载配置
                 this.loadConfig();
 
@@ -92,39 +94,19 @@ public class BladeServer {
     }
 
     private void initIoc() {
-        Ioc ioc = blade.ioc();
         RouteMatcher routeMatcher = blade.routeMatcher();
-        RouteBuilder routeBuilder = new RouteBuilder(routeMatcher);
-
-        List<BeanProcessor> processors = new ArrayList<>();
-        List<Class<? extends BeanProcessor>> processoers = new ArrayList<>();
+        routeBuilder = new RouteBuilder(routeMatcher);
 
         pkgs.stream()
                 .flatMap((DynamicContext::recursionFindClasses))
                 .map(ClassInfo::getClazz)
                 .filter(ReflectKit::isNormalClass)
-                .sorted((c1, c2) -> {
-                    Order o1 = c1.getAnnotation(Order.class);
-                    Order o2 = c2.getAnnotation(Order.class);
-                    Integer order1 = null != o1 ? o1.value() : Integer.MAX_VALUE;
-                    Integer order2 = null != o2 ? o2.value() : Integer.MAX_VALUE;
-                    return order1.compareTo(order2);
-                })
-                .forEach(clazz -> {
-                    if (null != clazz.getAnnotation(Bean.class)) ioc.addBean(clazz);
-                    if (null != clazz.getAnnotation(Path.class)) routeBuilder.addRouter(clazz);
-                    if (ReflectKit.hasInterface(clazz, Interceptor.class)) routeBuilder.addInterceptor(clazz);
-                    if (ReflectKit.hasInterface(clazz, BeanProcessor.class))
-                        processoers.add((Class<? extends BeanProcessor>) clazz);
-                    if (ReflectKit.hasInterface(clazz, StartedEvent.class))
-                        blade.event(Event.Type.SERVER_STARTED, (StartedEvent) ioc.addBean(clazz));
-                });
+                .sorted(this::compareTo)
+                .forEach(this::parseCls);
 
         routeMatcher.register();
 
-        processoers.forEach(cls -> processors.add(ioc.addBean(cls)));
-        processors.forEach(b -> b.register(ioc));
-
+        Ioc ioc = blade.ioc();
         if (BladeKit.isNotEmpty(ioc.getBeans())) {
             log.info("Register bean: {}", ioc.getBeans());
         }
@@ -174,6 +156,27 @@ public class BladeServer {
         }
     }
 
+    private void parseCls(Class<?> clazz) {
+        if (null != clazz.getAnnotation(Bean.class))
+            blade.register(clazz);
+        if (null != clazz.getAnnotation(Path.class))
+            routeBuilder.addRouter(clazz);
+        if (ReflectKit.hasInterface(clazz, Interceptor.class))
+            routeBuilder.addInterceptor(clazz);
+        if (ReflectKit.hasInterface(clazz, BeanProcessor.class))
+            ((BeanProcessor) blade.ioc().addBean(clazz)).register(blade.ioc());
+        if (ReflectKit.hasInterface(clazz, StartedEvent.class))
+            blade.event(Event.Type.SERVER_STARTED, (StartedEvent) blade.register(clazz));
+    }
+
+    private int compareTo(Class<?> c1, Class<?> c2) {
+        Order o1 = c1.getAnnotation(Order.class);
+        Order o2 = c2.getAnnotation(Order.class);
+        Integer order1 = null != o1 ? o1.value() : Integer.MAX_VALUE;
+        Integer order2 = null != o2 ? o2.value() : Integer.MAX_VALUE;
+        return order1.compareTo(order2);
+    }
+
     private void loadConfig() {
         String bootConf = blade.bootConf();
         this.environment = Environment.load(bootConf);
@@ -186,6 +189,7 @@ public class BladeServer {
         } else if (null != mainCls) {
             pkgs.add(mainCls.getPackage().getName());
         }
+        BannerStarter.printStart();
     }
 
     public void stop() {

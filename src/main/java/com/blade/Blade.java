@@ -104,6 +104,11 @@ public class Blade {
         return this;
     }
 
+    public Blade register(Class<?> cls) {
+        ioc.addBean(cls);
+        return this;
+    }
+
     public Blade addStatics(String... folders) {
         statics.addAll(Arrays.asList(folders));
         return this;
