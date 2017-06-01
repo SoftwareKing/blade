@@ -30,10 +30,7 @@ import org.omg.PortableInterceptor.Interceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author biezhi
@@ -82,6 +79,9 @@ public class BladeServer {
 
                 // 3. 初始化ioc
                 this.initIoc();
+
+                beanProcessors.forEach(b -> b.register(blade.ioc()));
+                startedEvents.forEach(e -> blade.event(Event.Type.SERVER_STARTED, e));
 
                 // 4. 启动web服务
                 this.startServer(initStart);
@@ -156,6 +156,9 @@ public class BladeServer {
         }
     }
 
+    private List<BeanProcessor> beanProcessors = new ArrayList<>();
+    private List<StartedEvent> startedEvents = new ArrayList<>();
+
     private void parseCls(Class<?> clazz) {
         if (null != clazz.getAnnotation(Bean.class))
             blade.register(clazz);
@@ -164,9 +167,9 @@ public class BladeServer {
         if (ReflectKit.hasInterface(clazz, Interceptor.class))
             routeBuilder.addInterceptor(clazz);
         if (ReflectKit.hasInterface(clazz, BeanProcessor.class))
-            ((BeanProcessor) blade.ioc().addBean(clazz)).register(blade.ioc());
+            beanProcessors.add((BeanProcessor) blade.ioc().getBean(clazz));
         if (ReflectKit.hasInterface(clazz, StartedEvent.class))
-            blade.event(Event.Type.SERVER_STARTED, (StartedEvent) blade.ioc().addBean(clazz));
+            startedEvents.add((StartedEvent) blade.ioc().getBean(clazz));
     }
 
     private int compareTo(Class<?> c1, Class<?> c2) {
