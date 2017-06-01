@@ -10,6 +10,16 @@ public final class StringKit {
 
     }
 
+
+    public static boolean isNotBlank(String str) {
+        return null != str && !"".equals(str.trim());
+    }
+
+    public static boolean isBlank(String str) {
+        return null == str || "".equals(str.trim());
+    }
+
+
     /**
      * 在字符串左侧填充一定数量的特殊字符
      *

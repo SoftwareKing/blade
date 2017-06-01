@@ -5,6 +5,7 @@ import com.blade.kit.BladeKit;
 import com.blade.ioc.reader.ClassPathClassReader;
 import com.blade.ioc.reader.ClassReader;
 import com.blade.ioc.reader.JarReaderImpl;
+import com.blade.kit.StringKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,7 @@ public final class DynamicContext {
     }
 
     public static boolean isJarPackage(String packageName) {
-        if (BladeKit.isBlank(packageName)) {
+        if (StringKit.isBlank(packageName)) {
             return false;
         }
         try {

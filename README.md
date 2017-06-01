@@ -97,7 +97,7 @@ public static void main(String[] args) {
 
 ```java
 public static void main(String[] args) {
-	$().get("/user", (request, response) -> {
+	blade.get("/user", (request, response) -> {
 		Integer uid = request.queryInt("uid").get();
 		response.text("uid : " + uid);
 	}).start(Application.class);

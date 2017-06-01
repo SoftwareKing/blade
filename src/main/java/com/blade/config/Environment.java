@@ -13,6 +13,8 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -26,6 +28,18 @@ public class Environment {
     private Properties props = new Properties();
 
     private Environment() {
+    }
+
+    public static Environment of(Properties props) {
+        Environment environment = new Environment();
+        environment.props = props;
+        return environment;
+    }
+
+    public static Environment of(Map<String, String> map) {
+        Environment environment = new Environment();
+        map.forEach((key, value) -> environment.props.setProperty(key, value));
+        return environment;
     }
 
     public static Environment load() {
@@ -131,7 +145,7 @@ public class Environment {
         return props.getProperty(key);
     }
 
-    public String getOrDefault(String key, String defaultValue) {
+    public String get(String key, String defaultValue) {
         return props.getProperty(key, defaultValue);
     }
 
@@ -143,4 +157,9 @@ public class Environment {
         return Long.valueOf(get(key));
     }
 
+    public Map<String, String> toMap() {
+        Map<String, String> map = new HashMap<>(props.size());
+        props.forEach((k, v) -> map.put(k.toString(), v.toString()));
+        return map;
+    }
 }

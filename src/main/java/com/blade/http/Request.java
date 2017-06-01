@@ -170,7 +170,7 @@ public interface Request {
     /**
      * @return Return server remote address
      */
-    Optional<String> address();
+    String address();
 
     /**
      * @return Return current session

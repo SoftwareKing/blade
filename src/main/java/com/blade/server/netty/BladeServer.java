@@ -177,6 +177,7 @@ public class BladeServer {
     private void loadConfig() {
         String bootConf = blade.bootConf();
         this.environment = Environment.load(bootConf);
+        blade.register(environment);
     }
 
     private void initConfig(Class<?> mainCls) {

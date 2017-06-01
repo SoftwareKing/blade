@@ -5,9 +5,9 @@ import com.blade.http.HttpMethod;
 import com.blade.http.Request;
 import com.blade.http.Response;
 import com.blade.kit.Assert;
-import com.blade.kit.BladeKit;
 import com.blade.kit.PathKit;
 import com.blade.kit.ReflectKit;
+import com.blade.kit.StringKit;
 import com.blade.mvc.RouteHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -164,7 +164,7 @@ public class RouteMatcher {
     }
 
     public void delRoute(String key) {
-        if (BladeKit.isNotBlank(key)) {
+        if (StringKit.isNotBlank(key)) {
             routes.remove(key);
         }
     }

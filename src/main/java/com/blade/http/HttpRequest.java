@@ -237,8 +237,8 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Optional<String> address() {
-        return Optional.ofNullable(BladeKit.ipAddr(this));
+    public String address() {
+        return BladeKit.ipAddr(this);
     }
 
     @Override

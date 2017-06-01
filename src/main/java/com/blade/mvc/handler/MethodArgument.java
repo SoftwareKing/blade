@@ -5,6 +5,7 @@ import com.blade.exception.RouteException;
 import com.blade.http.Request;
 import com.blade.http.Response;
 import com.blade.http.Session;
+import com.blade.kit.StringKit;
 import com.blade.mvc.annotation.*;
 import com.blade.mvc.multipart.FileItem;
 import com.blade.mvc.ui.ModelAndView;
@@ -56,7 +57,7 @@ public final class MethodArgument {
                 // form multipart
                 MultipartParam multipartParam = parameter.getAnnotation(MultipartParam.class);
                 if (null != multipartParam && argType == FileItem.class) {
-                    String name = BladeKit.isBlank(multipartParam.value()) ? paramName : multipartParam.value();
+                    String name = StringKit.isBlank(multipartParam.value()) ? paramName : multipartParam.value();
                     args[i] = request.fileItem(name);
                 }
             } else {
@@ -84,7 +85,7 @@ public final class MethodArgument {
     }
 
     private static Object getQueryParam(Class<?> argType, QueryParam queryParam, String paramName, Request request) throws BladeException {
-        String name = BladeKit.isBlank(queryParam.name()) ? paramName : queryParam.name();
+        String name = StringKit.isBlank(queryParam.name()) ? paramName : queryParam.name();
 
         if (ReflectKit.isBasicType(argType)) {
             Optional<String> val = request.query(name);
@@ -102,7 +103,7 @@ public final class MethodArgument {
     }
 
     private static Object getCookie(Class<?> argType, CookieParam cookieParam, String paramName, Request request) throws RouteException {
-        String cookieName = BladeKit.isBlank(cookieParam.value()) ? paramName : cookieParam.value();
+        String cookieName = StringKit.isBlank(cookieParam.value()) ? paramName : cookieParam.value();
         Optional<String> val = request.cookie(cookieName);
         boolean required = cookieParam.required();
         if (!val.isPresent()) {
@@ -115,7 +116,7 @@ public final class MethodArgument {
     }
 
     private static Object getHeader(Class<?> argType, HeaderParam headerParam, String paramName, Request request) throws RouteException {
-        String key = BladeKit.isBlank(headerParam.value()) ? paramName : headerParam.value();
+        String key = StringKit.isBlank(headerParam.value()) ? paramName : headerParam.value();
         Optional<String> val = request.header(key);
         boolean required = headerParam.required();
         if (!val.isPresent()) {
@@ -128,7 +129,7 @@ public final class MethodArgument {
     }
 
     private static Object getPathParam(Class<?> argType, PathParam pathParam, String paramName, Request request) {
-        String name = BladeKit.isBlank(pathParam.name()) ? paramName : pathParam.name();
+        String name = StringKit.isBlank(pathParam.name()) ? paramName : pathParam.name();
         Optional<String> val = request.pathString(name);
         if (!val.isPresent()) {
             val = Optional.of(pathParam.defaultValue());
@@ -169,7 +170,7 @@ public final class MethodArgument {
         if (parameterType.equals(String.class)) {
             return val;
         }
-        if (BladeKit.isBlank(val)) {
+        if (StringKit.isBlank(val)) {
             if (parameterType.equals(int.class) || parameterType.equals(double.class) ||
                     parameterType.equals(long.class) || parameterType.equals(byte.class) || parameterType.equals(float.class)) {
                 result = 0;
