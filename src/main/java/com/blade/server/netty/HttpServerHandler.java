@@ -1,10 +1,10 @@
 package com.blade.server.netty;
 
 import com.blade.Blade;
-import com.blade.http.HttpRequest;
-import com.blade.http.HttpResponse;
-import com.blade.http.Request;
-import com.blade.http.Response;
+import com.blade.mvc.http.HttpRequest;
+import com.blade.mvc.http.HttpResponse;
+import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Response;
 import com.blade.ioc.Ioc;
 import com.blade.kit.PathKit;
 import com.blade.mvc.RouteHandler;

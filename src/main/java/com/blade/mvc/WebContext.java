@@ -1,7 +1,7 @@
 package com.blade.mvc;
 
-import com.blade.http.Request;
-import com.blade.http.Response;
+import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Response;
 import io.netty.util.concurrent.FastThreadLocal;
 
 /**

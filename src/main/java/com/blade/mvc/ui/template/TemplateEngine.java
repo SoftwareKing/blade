@@ -1,6 +1,6 @@
 package com.blade.mvc.ui.template;
 
-import com.blade.exception.TemplateException;
+import com.blade.TemplateException;
 import com.blade.mvc.ui.ModelAndView;
 
 import java.io.Writer;

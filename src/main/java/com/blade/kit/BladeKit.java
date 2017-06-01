@@ -1,6 +1,6 @@
 package com.blade.kit;
 
-import com.blade.http.Request;
+import com.blade.mvc.http.Request;
 import com.blade.kit.ason.Ason;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;

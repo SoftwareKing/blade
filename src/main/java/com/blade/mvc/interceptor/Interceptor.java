@@ -1,7 +1,7 @@
 package com.blade.mvc.interceptor;
 
-import com.blade.http.Request;
-import com.blade.http.Response;
+import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Response;
 
 /**
  * Interceptor, In the routing block before and after the execution.

@@ -1,6 +1,6 @@
 package com.blade;
 
-import com.blade.http.HttpMethod;
+import com.blade.mvc.http.HttpMethod;
 import com.blade.ioc.Ioc;
 import com.blade.ioc.SimpleIoc;
 import com.blade.lifecycle.Event;

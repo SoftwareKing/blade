@@ -1,4 +1,4 @@
-package com.blade.config;
+package com.blade;
 
 import com.blade.kit.BladeKit;
 import org.slf4j.Logger;

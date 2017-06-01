@@ -1,6 +1,6 @@
 package com.blade.mvc.ui.template;
 
-import com.blade.exception.TemplateException;
+import com.blade.TemplateException;
 import com.blade.kit.BladeKit;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.server.netty.BladeServer;

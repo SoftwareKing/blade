@@ -1,6 +1,6 @@
 package com.example.blog.controller;
 
-import com.blade.http.Response;
+import com.blade.mvc.http.Response;
 import com.blade.mvc.annotation.Path;
 import com.blade.mvc.annotation.Route;
 

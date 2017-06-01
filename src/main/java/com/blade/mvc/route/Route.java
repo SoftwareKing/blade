@@ -1,6 +1,6 @@
 package com.blade.mvc.route;
 
-import com.blade.http.HttpMethod;
+import com.blade.mvc.http.HttpMethod;
 import com.blade.kit.PathKit;
 
 import java.lang.reflect.Method;

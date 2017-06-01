@@ -1,8 +1,8 @@
 package com.blade.server.netty;
 
 import com.blade.Blade;
-import com.blade.http.Request;
-import com.blade.http.Response;
+import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Response;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;

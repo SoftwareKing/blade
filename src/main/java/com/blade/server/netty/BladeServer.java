@@ -2,7 +2,7 @@ package com.blade.server.netty;
 
 import com.blade.Blade;
 import com.blade.banner.BannerStarter;
-import com.blade.config.Environment;
+import com.blade.Environment;
 import com.blade.ioc.BeanDefine;
 import com.blade.ioc.DynamicContext;
 import com.blade.ioc.Ioc;
