@@ -166,7 +166,7 @@ public class BladeServer {
         if (ReflectKit.hasInterface(clazz, BeanProcessor.class))
             ((BeanProcessor) blade.ioc().addBean(clazz)).register(blade.ioc());
         if (ReflectKit.hasInterface(clazz, StartedEvent.class))
-            blade.event(Event.Type.SERVER_STARTED, (StartedEvent) blade.register(clazz));
+            blade.event(Event.Type.SERVER_STARTED, (StartedEvent) blade.ioc().addBean(clazz));
     }
 
     private int compareTo(Class<?> c1, Class<?> c2) {
