@@ -33,6 +33,7 @@ public class Blade {
     private boolean fileList = false;
     private boolean gzipEnable = false;
     private boolean started = false;
+    private boolean devMode = true;
 
     private String address = "0.0.0.0";
     private String bootConf = "classpath:app.properties";
@@ -134,6 +135,15 @@ public class Blade {
 
     public Blade gzip(boolean gzipEnable) {
         this.gzipEnable = gzipEnable;
+        return this;
+    }
+
+    public boolean devMode() {
+        return this.devMode;
+    }
+
+    public Blade devMode(boolean devMode) {
+        this.devMode = devMode;
         return this;
     }
 

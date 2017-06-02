@@ -182,7 +182,11 @@ public class RouteMatcher {
         Map<String, String> uriVariables = new LinkedHashMap<>();
         HttpMethod requestMethod = HttpMethod.valueOf(httpMethod);
         try {
-            Matcher matcher = regexRoutePatterns.get(requestMethod).matcher(path);
+            Pattern pattern = regexRoutePatterns.get(requestMethod);
+            if (null == pattern) {
+                return null;
+            }
+            Matcher matcher = pattern.matcher(path);
             boolean matched = matcher.matches();
             if (!matched) {
                 requestMethod = HttpMethod.ALL;
@@ -338,11 +342,13 @@ public class RouteMatcher {
         }
 
         patternBuilders.forEach((httpMethod, patternBuilder) -> {
-            if (patternBuilder.length() > 1) {
-                patternBuilder.setCharAt(patternBuilder.length() - 1, '$');
+            if (httpMethod != HttpMethod.BEFORE && httpMethod != HttpMethod.AFTER) {
+                if (patternBuilder.length() > 1) {
+                    patternBuilder.setCharAt(patternBuilder.length() - 1, '$');
+                }
+                log.debug("Fast Route Method: {}, regex: {}", httpMethod, patternBuilder);
+                regexRoutePatterns.put(httpMethod, Pattern.compile(patternBuilder.toString()));
             }
-            log.debug("Fast Route Method: {}, regex: {}", httpMethod, patternBuilder);
-            regexRoutePatterns.put(httpMethod, Pattern.compile(patternBuilder.toString()));
         });
 
     }

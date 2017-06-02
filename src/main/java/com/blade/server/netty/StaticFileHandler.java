@@ -1,6 +1,8 @@
 package com.blade.server.netty;
 
 import com.blade.Blade;
+import com.blade.kit.DateKit;
+import com.blade.mvc.Const;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
 import io.netty.buffer.ByteBuf;
@@ -17,12 +19,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
 import java.net.URLConnection;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -39,8 +42,6 @@ public class StaticFileHandler {
 
     private boolean showFileList;
 
-    public static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
-    public static final String HTTP_DATE_GMT_TIMEZONE = "GMT";
     public static final int HTTP_CACHE_SECONDS = 60;
 
     public StaticFileHandler(Blade blade) {
@@ -81,7 +82,7 @@ public class StaticFileHandler {
 
         // Cache Validation
         request.header(IF_MODIFIED_SINCE).ifPresent(ifModifiedSince -> {
-            Date ifModifiedSinceDate = format(ifModifiedSince, HTTP_DATE_FORMAT);
+            Date ifModifiedSinceDate = format(ifModifiedSince, Const.HTTP_DATE_FORMAT);
             // Only compare up to the second because the datetime format we send to the client
             // does not have milliseconds
             long ifModifiedSinceDateSeconds = ifModifiedSinceDate.getTime() / 1000;
@@ -124,8 +125,7 @@ public class StaticFileHandler {
 
         } else {
             sendFileFuture =
-                    ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(raf, 0, fileLength, 8192)),
-                            ctx.newProgressivePromise());
+                    ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(raf, 0, fileLength, 8192)), ctx.newProgressivePromise());
             // HttpChunkedInput will write the end marker (LastHttpContent) for us.
             lastContentFuture = sendFileFuture;
         }
@@ -202,7 +202,7 @@ public class StaticFileHandler {
     private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HTTP_1_1, status, Unpooled.copiedBuffer("Failure: " + status + "\r\n", CharsetUtil.UTF_8));
-        response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
+        response.headers().set(CONTENT_TYPE, Const.CONTENT_TYPE_TEXT);
 
         // Close the connection as soon as the error message is sent.
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
@@ -227,11 +227,7 @@ public class StaticFileHandler {
      * @param response HTTP response
      */
     private static void setDateHeader(FullHttpResponse response) {
-        SimpleDateFormat dateFormatter = new SimpleDateFormat(HTTP_DATE_FORMAT, Locale.US);
-        dateFormatter.setTimeZone(TimeZone.getTimeZone(HTTP_DATE_GMT_TIMEZONE));
-
-        Calendar time = new GregorianCalendar();
-        response.headers().set(DATE, dateFormatter.format(time.getTime()));
+        response.headers().set(DATE, DateKit.gmtDate());
     }
 
     private static final Pattern INSECURE_URI = Pattern.compile(".*[<>&\"].*");
@@ -261,19 +257,21 @@ public class StaticFileHandler {
      * @param fileToCache file to extract content type
      */
     private static void setDateAndCacheHeaders(HttpResponse response, File fileToCache) {
-        SimpleDateFormat dateFormatter = new SimpleDateFormat(HTTP_DATE_FORMAT, Locale.US);
-        dateFormatter.setTimeZone(TimeZone.getTimeZone(HTTP_DATE_GMT_TIMEZONE));
 
         // Date header
-        Calendar time = new GregorianCalendar();
-        response.headers().set(DATE, dateFormatter.format(time.getTime()));
+        LocalDateTime localTime = LocalDateTime.now();
+        String date = DateKit.gmtDate(localTime);
+
+        response.headers().set(DATE, date);
+
+        LocalDateTime newTime = localTime.plusSeconds(HTTP_CACHE_SECONDS);
+        date = DateKit.gmtDate(newTime);
 
         // Add cache headers
-        time.add(Calendar.SECOND, HTTP_CACHE_SECONDS);
-        response.headers().set(EXPIRES, dateFormatter.format(time.getTime()));
+        response.headers().set(EXPIRES, date);
+
         response.headers().set(CACHE_CONTROL, "private, max-age=" + HTTP_CACHE_SECONDS);
-        response.headers().set(
-                LAST_MODIFIED, dateFormatter.format(new Date(fileToCache.lastModified())));
+        response.headers().set(LAST_MODIFIED, DateKit.gmtDate(new Date(fileToCache.lastModified())));
     }
 
     /**

@@ -37,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.SERVER;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -55,6 +56,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     private RouteViewResolve routeViewResolve;
     private Set<String> statics;
     private boolean showFileList;
+    private boolean devMode;
     private TemplateEngine templateEngine;
     private StaticFileHandler staticFileHandler;
 
@@ -63,6 +65,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     public HttpServerHandler(Blade blade) {
         this.ioc = blade.ioc();
         this.statics = blade.getStatics();
+        this.devMode = blade.devMode();
         this.templateEngine = blade.templateEngine();
         this.routeMatcher = blade.routeMatcher();
         this.routeViewResolve = new RouteViewResolve(blade);
@@ -78,7 +81,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
 
         Request request = new HttpRequest(fullHttpRequest);
         Response response = new HttpResponse(ctx, templateEngine);
-        response.header("Server", "blade/" + Blade.VER);
+        response.header(SERVER, "blade/" + Blade.VER);
 
         // reuqest uri
         String uri = PathKit.getRelativePath(request.uri(), request.contextPath());
@@ -109,11 +112,10 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             }
         } catch (BladeException e) {
             log.error("", e);
-
             String error = e.getMessage();
-
             String contentType = response.contentType();
-            if (contentType.contains("html")) {
+
+            if (devMode && contentType.contains("html")) {
                 StringWriter sw = new StringWriter();
                 PrintWriter writer = new PrintWriter(sw);
                 writer.write(String.format(DefaultUI.HTML, e.getClass() + " : " + e.getMessage()));
@@ -134,6 +136,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         log.error("", cause);
         if (ctx.channel().isActive()) {
             sendError(ctx, INTERNAL_SERVER_ERROR, cause.getMessage());
+        } else {
+            ctx.close();
         }
     }
 

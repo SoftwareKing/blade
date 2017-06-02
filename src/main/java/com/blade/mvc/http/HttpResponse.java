@@ -1,6 +1,8 @@
 package com.blade.mvc.http;
 
+import com.blade.kit.DateKit;
 import com.blade.kit.JsonKit;
+import com.blade.mvc.Const;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.template.TemplateEngine;
@@ -23,7 +25,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 
 /**
  * @author biezhi
@@ -36,7 +38,7 @@ public class HttpResponse implements Response {
     private ChannelHandlerContext ctx;
     private FullHttpResponse response;
 
-    private String contentType = "text/html; charset=UTF-8";
+    private String contentType = Const.CONTENT_TYPE_HTML;
     private HttpVersion httpVersion = HttpVersion.HTTP_1_1;
     private HttpResponseStatus status = HttpResponseStatus.OK;
     private Object content = Unpooled.EMPTY_BUFFER;
@@ -156,7 +158,7 @@ public class HttpResponse implements Response {
     @Override
     public void text(String text) {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(text, CharsetUtil.UTF_8));
-        this.contentType = "text/plain; charset=UTF-8";
+        this.contentType = Const.CONTENT_TYPE_TEXT;
         this.send(response);
     }
 
@@ -171,7 +173,7 @@ public class HttpResponse implements Response {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(json, CharsetUtil.UTF_8));
         String userAgent = WebContext.request().userAgent();
         if (!userAgent.contains("MSIE")) {
-            this.contentType = "application/json; charset=UTF-8";
+            this.contentType = Const.CONTENT_TYPE_JSON;
         }
         this.send(response);
     }
@@ -196,29 +198,22 @@ public class HttpResponse implements Response {
     }
 
     private void send(FullHttpResponse response) {
-        headers.set("Date", gmtDate());
-        headers.set("Content-Type", this.contentType);
-        headers.setInt("Content-Length", response.content().readableBytes());
+        headers.set(DATE, DateKit.gmtDate());
+        headers.set(CONTENT_TYPE, this.contentType);
+        headers.setInt(CONTENT_LENGTH, response.content().readableBytes());
 
         HttpHeaders httpHeaders = response.headers().add(this.headers);
-        this.cookies.forEach(cookie -> httpHeaders.add(SET_COOKIE.toString(), ServerCookieEncoder.LAX.encode(cookie)));
+        this.cookies.forEach(cookie -> httpHeaders.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
         boolean keepAlive = WebContext.request().keepAlive();
         if (!keepAlive) {
             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         } else {
-            response.headers().set("Connection", KEEP_ALIVE);
+            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
             ctx.writeAndFlush(response);
         }
         isCommit = true;
     }
 
-
-    public static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
-
-    public String gmtDate() {
-        ZonedDateTime utc = ZonedDateTime.now(ZoneId.of("GMT"));
-        return DateTimeFormatter.ofPattern(HTTP_DATE_FORMAT, Locale.US).format(utc);
-    }
 
     @Override
     public void redirect(String newUri) {

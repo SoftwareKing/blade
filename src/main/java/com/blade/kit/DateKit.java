@@ -1,10 +1,13 @@
 package com.blade.kit;
 
+import com.blade.mvc.Const;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * date kit
@@ -79,6 +82,22 @@ public final class DateKit {
     public static Date toDate(String time, String pattern) {
         LocalDateTime formatted = LocalDateTime.parse(time, DateTimeFormatter.ofPattern(pattern));
         return Date.from(formatted.atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    public static String gmtDate() {
+        ZoneId zone = ZoneId.of("GMT");
+        return DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US).format(LocalDateTime.now().atZone(zone));
+    }
+
+    public static String gmtDate(LocalDateTime localDateTime) {
+        ZoneId zone = ZoneId.of("GMT");
+        return DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US).format(localDateTime.atZone(zone));
+    }
+
+    public static String gmtDate(Date date) {
+        ZoneId zone = ZoneId.of("GMT");
+        return DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US).format(LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()).atZone(zone));
+
     }
 
 }
