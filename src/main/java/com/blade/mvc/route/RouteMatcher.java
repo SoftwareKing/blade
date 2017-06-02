@@ -6,6 +6,8 @@ import com.blade.kit.PathKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
 import com.blade.mvc.RouteHandler;
+import com.blade.mvc.hook.Invoker;
+import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
@@ -20,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Default Route Matcher
@@ -36,6 +39,9 @@ public class RouteMatcher {
     // Storage URL and route
     private Map<String, Route> routes = new HashMap<>();
     private Map<String, Route> hooks = new HashMap<>();
+
+    private Map<String, Method[]> classMethosPool = new ConcurrentHashMap<>();
+    private Map<Class<?>, Object> controllerPool = new ConcurrentHashMap<>();
 
     private static final Pattern PATH_VARIABLE_PATTERN = Pattern.compile(":(\\w+)");
 
@@ -74,13 +80,13 @@ public class RouteMatcher {
         routes.forEach(this::addRoute);
     }
 
-    public void addRoute(HttpMethod httpMethod, String path, RouteHandler handler, String methodName) throws NoSuchMethodException {
+    public Route addRoute(HttpMethod httpMethod, String path, RouteHandler handler, String methodName) throws NoSuchMethodException {
         Class<?> handleType = handler.getClass();
         Method method = handleType.getMethod(methodName, Request.class, Response.class);
-        addRoute(httpMethod, path, handler, RouteHandler.class, method);
+        return addRoute(httpMethod, path, handler, RouteHandler.class, method);
     }
 
-    public void addRoute(HttpMethod httpMethod, String path, Object controller, Class<?> controllerType, Method method) {
+    public Route addRoute(HttpMethod httpMethod, String path, Object controller, Class<?> controllerType, Method method) {
 
         String key = path + "#" + httpMethod.toString();
         // existent
@@ -97,14 +103,32 @@ public class RouteMatcher {
         } else {
             this.routes.put(key, route);
         }
+        return route;
+    }
+
+    public void addAndRegsiter(String path, RouteHandler handler, HttpMethod httpMethod) {
+        Route route = this.addRoute(path, handler, httpMethod);
+        this.registerRoute(route);
+
+        patternBuilders.keySet().stream()
+                .filter(hm -> hm != HttpMethod.BEFORE && hm != HttpMethod.AFTER)
+                .forEach(hm -> {
+                    StringBuilder patternBuilder = patternBuilders.get(hm);
+                    if (patternBuilder.length() > 1 && patternBuilder.charAt(patternBuilder.length() - 1) != '$') {
+                        patternBuilder.setCharAt(patternBuilder.length() - 1, '$');
+                    }
+                    log.debug("Fast Route Method: {}, regex: {}", hm, patternBuilder);
+                    regexRoutePatterns.put(hm, Pattern.compile(patternBuilder.toString()));
+                });
 
     }
 
-    public void addRoute(String path, RouteHandler handler, HttpMethod httpMethod) {
+    public Route addRoute(String path, RouteHandler handler, HttpMethod httpMethod) {
         try {
-            addRoute(httpMethod, path, handler, METHOD_NAME);
-        } catch (NoSuchMethodException e) {
+            return addRoute(httpMethod, path, handler, METHOD_NAME);
+        } catch (Exception e) {
             log.error("", e);
+            return null;
         }
     }
 
@@ -113,9 +137,6 @@ public class RouteMatcher {
             addRoute(path, handler, httpMethod);
         }
     }
-
-    private Map<String, Method[]> classMethosPool = new ConcurrentHashMap<>();
-    private Map<Class<?>, Object> controllerPool = new ConcurrentHashMap<>();
 
     public void route(String path, Class<?> clazz, String methodName) {
         Assert.notNull(methodName, "Method name not is null");
@@ -190,7 +211,11 @@ public class RouteMatcher {
             boolean matched = matcher.matches();
             if (!matched) {
                 requestMethod = HttpMethod.ALL;
-                matcher = regexRoutePatterns.get(requestMethod).matcher(path);
+                pattern = regexRoutePatterns.get(requestMethod);
+                if (null == pattern) {
+                    return null;
+                }
+                matcher = pattern.matcher(path);
                 matched = matcher.matches();
             }
             if (matched) {
@@ -303,54 +328,70 @@ public class RouteMatcher {
 
     // a bad way
     public void register() {
-
         routes.values().forEach(route -> log.info("Add route => {}", route));
         hooks.values().forEach(route -> log.info("Add hook  => {}", route));
 
         List<Route> routeHandlers = new ArrayList<>(routes.values());
         routeHandlers.addAll(hooks.values());
 
-        for (Route route : routeHandlers) {
-            String path = parsePath(route.getPath());
-            Matcher matcher = PATH_VARIABLE_PATTERN.matcher(path);
-            boolean find = false;
-            List<String> uriVariableNames = new ArrayList<>();
-            while (matcher.find()) {
-                if (!find) {
-                    find = true;
-                }
-                String group = matcher.group(0);
-                uriVariableNames.add(group.substring(1));   // {id} -> id
-            }
-            HttpMethod httpMethod = route.getHttpMethod();
-            if (find || (httpMethod == HttpMethod.AFTER || httpMethod == HttpMethod.BEFORE)) {
-                if (regexRoutes.get(httpMethod) == null) {
-                    regexRoutes.put(httpMethod, new HashMap<>());
-                    patternBuilders.put(httpMethod, new StringBuilder("^"));
-                    indexes.put(httpMethod, 1);
-                }
-                int i = indexes.get(httpMethod);
-                regexRoutes.get(httpMethod).put(i, new FastRouteMappingInfo(route, uriVariableNames));
-                indexes.put(httpMethod, i + uriVariableNames.size() + 1);
-                patternBuilders.get(httpMethod).append("(").append(matcher.replaceAll(PATH_VARIABLE_REPLACE)).append(")|");
-            } else {
-                String routeKey = path + '#' + httpMethod.toString();
-                if (staticRoutes.get(routeKey) == null) {
-                    staticRoutes.put(routeKey, route);
-                }
-            }
-        }
+        Stream.of(routes.values(), hooks.values())
+                .flatMap(c -> c.stream()).forEach(this::registerRoute);
 
         patternBuilders.forEach((httpMethod, patternBuilder) -> {
             if (httpMethod != HttpMethod.BEFORE && httpMethod != HttpMethod.AFTER) {
-                if (patternBuilder.length() > 1) {
-                    patternBuilder.setCharAt(patternBuilder.length() - 1, '$');
-                }
+//                if (patternBuilder.length() > 1) {
+//                    patternBuilder.setCharAt(patternBuilder.length() - 1, '$');
+//                }
                 log.debug("Fast Route Method: {}, regex: {}", httpMethod, patternBuilder);
                 regexRoutePatterns.put(httpMethod, Pattern.compile(patternBuilder.toString()));
             }
         });
 
+    }
+
+    public void registerRoute(Route route) {
+        String path = parsePath(route.getPath());
+        Matcher matcher = PATH_VARIABLE_PATTERN.matcher(path);
+        boolean find = false;
+        List<String> uriVariableNames = new ArrayList<>();
+        while (matcher.find()) {
+            if (!find) {
+                find = true;
+            }
+            String group = matcher.group(0);
+            uriVariableNames.add(group.substring(1));   // {id} -> id
+        }
+        HttpMethod httpMethod = route.getHttpMethod();
+        if (find || (httpMethod == HttpMethod.AFTER || httpMethod == HttpMethod.BEFORE)) {
+            if (regexRoutes.get(httpMethod) == null) {
+                regexRoutes.put(httpMethod, new HashMap<>());
+                patternBuilders.put(httpMethod, new StringBuilder("^"));
+                indexes.put(httpMethod, 1);
+            }
+            int i = indexes.get(httpMethod);
+            regexRoutes.get(httpMethod).put(i, new FastRouteMappingInfo(route, uriVariableNames));
+            indexes.put(httpMethod, i + uriVariableNames.size() + 1);
+            StringBuilder oldPattern = patternBuilders.get(httpMethod);
+            oldPattern.append("(").append(matcher.replaceAll(PATH_VARIABLE_REPLACE)).append(")|");
+            System.out.println(patternBuilders.get(httpMethod));
+        } else {
+            String routeKey = path + '#' + httpMethod.toString();
+            if (staticRoutes.get(routeKey) == null) {
+                staticRoutes.put(routeKey, route);
+            }
+        }
+    }
+
+    public void clear() {
+        this.routes.clear();
+        this.hooks.clear();
+        this.classMethosPool.clear();
+        this.controllerPool.clear();
+        this.regexRoutePatterns.clear();
+        this.staticRoutes.clear();
+        this.regexRoutes.clear();
+        this.indexes.clear();
+        this.patternBuilders.clear();
     }
 
     private class FastRouteMappingInfo {

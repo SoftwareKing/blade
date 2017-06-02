@@ -21,9 +21,10 @@ If you like it, please [star](https://github.com/biezhi/blade/stargazers) / [for
 * [x] RESTful style routing interface
 * [x] Template engine support
 * [x] Run with jar file
-* [x] JDK8+
 * [x] Fluent interface
 * [x] Support plugin
+* [x] Support webjars
+* [x] JDK8+
 
 ## Overview
 

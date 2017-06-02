@@ -13,10 +13,12 @@ import java.util.Optional;
  */
 public interface Request {
 
+    Request pathParams(Map<String, String> pathParams);
+
     /**
      * @return Return client request host
      */
-    Optional<String> host();
+    String host();
 
     String path();
 
@@ -51,16 +53,7 @@ public interface Request {
      * @param name Parameter name
      * @return Return parameter value
      */
-    Optional<String> pathString(String name);
-
-    /**
-     * Get a URL parameter, and returns defaultValue if it is NULL
-     *
-     * @param name         Parameter name
-     * @param defaultValue Default Value
-     * @return Return parameter value
-     */
-    String pathString(String name, String defaultValue);
+    String pathString(String name);
 
     /**
      * Return a URL parameter for a Int type
@@ -68,7 +61,7 @@ public interface Request {
      * @param name Parameter name
      * @return Return Int parameter value
      */
-    Optional<Integer> pathInt(String name);
+    Integer pathInt(String name);
 
     /**
      * Return a URL parameter for a Long type
@@ -76,7 +69,7 @@ public interface Request {
      * @param name Parameter name
      * @return Return Long parameter value
      */
-    Optional<Long> pathLong(String name);
+    Long pathLong(String name);
 
     /**
      * @return Return query string
@@ -200,6 +193,8 @@ public interface Request {
     boolean isAjax();
 
     boolean isIE();
+
+    Map<String, String> cookies();
 
     /**
      * Get String Cookie Value

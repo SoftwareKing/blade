@@ -4,6 +4,7 @@ import com.blade.Blade;
 import com.blade.BladeException;
 import com.blade.ioc.Ioc;
 import com.blade.kit.ReflectKit;
+import com.blade.mvc.RouteHandler;
 import com.blade.mvc.annotation.JSON;
 import com.blade.mvc.annotation.Path;
 import com.blade.mvc.http.Request;
@@ -25,7 +26,7 @@ public class RouteViewResolve {
         this.templateEngine = blade.templateEngine();
     }
 
-    public void handle(Request request, Response response, Route route) {
+    public boolean handle(Request request, Response response, Route route) {
         try {
             Method actionMethod = route.getAction();
             Object target = route.getTarget();
@@ -58,6 +59,7 @@ public class RouteViewResolve {
                         response.render(modelAndView);
                     }
                 }
+                return true;
             }
         } catch (Exception e) {
             Throwable t = e;
@@ -69,12 +71,12 @@ public class RouteViewResolve {
             }
             throw new BladeException(t);
         }
+        return false;
     }
 
     public boolean invokeHook(Request request, Response response, Route route) throws BladeException {
         Method actionMethod = route.getAction();
         Object target = route.getTarget();
-
         if (null == target) {
             Class<?> clazz = route.getAction().getDeclaringClass();
             target = ioc.getBean(clazz);
@@ -101,7 +103,7 @@ public class RouteViewResolve {
             }
             return true;
         } catch (Exception e) {
-            throw new BladeException(e.getMessage());
+            throw new BladeException(e);
         }
     }
 

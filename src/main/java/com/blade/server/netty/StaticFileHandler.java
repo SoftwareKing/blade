@@ -295,7 +295,7 @@ public class StaticFileHandler {
             return null;
         }
         // Convert to absolute path.
-        return BladeServer.CLASSPATH + uri.substring(1);
+        return WebServer.CLASSPATH + uri.substring(1);
     }
 
 

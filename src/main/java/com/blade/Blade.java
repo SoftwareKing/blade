@@ -6,17 +6,21 @@ import com.blade.lifecycle.Event;
 import com.blade.lifecycle.EventListener;
 import com.blade.lifecycle.EventManager;
 import com.blade.mvc.RouteHandler;
+import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.template.DefaultEngine;
 import com.blade.mvc.ui.template.TemplateEngine;
-import com.blade.server.netty.BladeServer;
+import com.blade.server.netty.WebServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 /**
  * Blade Core
@@ -25,6 +29,8 @@ import java.util.concurrent.CountDownLatch;
  *         2017/5/31
  */
 public class Blade {
+
+    private static final Logger log = LoggerFactory.getLogger(Blade.class);
 
     public static final String VER = "2.0.0-SNAPSHOT";
 
@@ -38,7 +44,7 @@ public class Blade {
     private String address = "0.0.0.0";
     private String bootConf = "classpath:app.properties";
     private RouteMatcher routeMatcher = new RouteMatcher();
-    private BladeServer bladeServer;
+    private WebServer webServer;
 
     private Optional<String[]> pkgs = Optional.empty();
 
@@ -47,6 +53,8 @@ public class Blade {
     private Ioc ioc = new SimpleIoc();
 
     private Set<String> statics = new HashSet<>(Arrays.asList("/favicon.ico", "/static/", "/upload/", "/webjars/"));
+
+    private Consumer<Exception> startupExceptionHandler = (e) -> log.error("Failed to start Blade", e);
 
     private CountDownLatch latch = new CountDownLatch(1);
 
@@ -64,32 +72,32 @@ public class Blade {
     }
 
     public Blade get(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.GET);
+        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.GET);
         return this;
     }
 
     public Blade post(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.POST);
+        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.POST);
         return this;
     }
 
     public Blade put(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.PUT);
+        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.PUT);
         return this;
     }
 
     public Blade delete(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.DELETE);
+        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.DELETE);
         return this;
     }
 
     public Blade before(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.BEFORE);
+        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.BEFORE);
         return this;
     }
 
     public Blade after(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.AFTER);
+        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.AFTER);
         return this;
     }
 
@@ -216,10 +224,24 @@ public class Blade {
     }
 
     public Blade start(Class<?> mainCls, String address, int port, String... args) {
-        eventManager.fireEvent(Event.Type.SERVER_STARTING, this);
-        bladeServer = new BladeServer(this, args);
-        bladeServer.initAndStart(mainCls);
-        started = true;
+        try {
+            eventManager.fireEvent(Event.Type.SERVER_STARTING, this);
+            webServer = new WebServer(this, args);
+            Thread thread = new Thread(() -> {
+                try {
+                    webServer.initAndStart(mainCls);
+                    latch.countDown();
+                    webServer.join();
+                } catch (Exception e) {
+                    startupExceptionHandler.accept(e);
+                }
+            });
+            thread.setName("blade-start-thread");
+            thread.start();
+            started = true;
+        } catch (Exception e) {
+            startupExceptionHandler.accept(e);
+        }
         return this;
     }
 
@@ -230,7 +252,7 @@ public class Blade {
         try {
             latch.await();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("awit error", e);
             Thread.currentThread().interrupt();
         }
         return this;
@@ -238,7 +260,7 @@ public class Blade {
 
     public void stop() {
         eventManager.fireEvent(Event.Type.SERVER_STOPPING, this);
-        bladeServer.stop();
+        webServer.stop();
         eventManager.fireEvent(Event.Type.SERVER_STOPPED, this);
     }
 

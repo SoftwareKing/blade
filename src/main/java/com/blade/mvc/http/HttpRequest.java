@@ -2,6 +2,7 @@ package com.blade.mvc.http;
 
 import com.blade.BladeException;
 import com.blade.kit.PathKit;
+import com.blade.kit.StringKit;
 import com.blade.kit.WebKit;
 import com.blade.mvc.multipart.FileItem;
 import io.netty.buffer.ByteBuf;
@@ -32,6 +33,7 @@ public class HttpRequest implements Request {
     private Map<String, String> headers = new HashMap<>();
     private Map<String, Object> attrs = new HashMap<>();
     private Map<String, List<String>> parameters = new HashMap<>();
+    private Map<String, String> pathParams = new HashMap<>();
     private Map<String, Cookie> cookies = new HashMap<>();
 
     private Map<String, FileItem> fileItems = new HashMap<>();
@@ -55,7 +57,7 @@ public class HttpRequest implements Request {
         }
 
         // 初始化cookie
-        header("cookie").ifPresent(header -> {
+        header("Cookie").ifPresent(header -> {
             ServerCookieDecoder.LAX.decode(header).forEach(this::parseCookie);
         });
     }
@@ -99,7 +101,15 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Optional<String> host() {
+    public Request pathParams(Map<String, String> pathParams) {
+        if (null != pathParams) {
+            this.pathParams = pathParams;
+        }
+        return this;
+    }
+
+    @Override
+    public String host() {
         return null;
     }
 
@@ -130,27 +140,24 @@ public class HttpRequest implements Request {
 
     @Override
     public Map<String, String> pathParams() {
-        return null;
+        return this.pathParams;
     }
 
     @Override
-    public Optional<String> pathString(String name) {
-        return null;
+    public String pathString(String name) {
+        return this.pathParams.get(name);
     }
 
     @Override
-    public String pathString(String name, String defaultValue) {
-        return null;
+    public Integer pathInt(String name) {
+        String val = pathString(name);
+        return StringKit.isNotBlank(val) ? Integer.valueOf(val) : null;
     }
 
     @Override
-    public Optional<Integer> pathInt(String name) {
-        return Optional.of(1);
-    }
-
-    @Override
-    public Optional<Long> pathLong(String name) {
-        return Optional.of(1L);
+    public Long pathLong(String name) {
+        String val = pathString(name);
+        return StringKit.isNotBlank(val) ? Long.valueOf(val) : null;
     }
 
     @Override
@@ -270,6 +277,13 @@ public class HttpRequest implements Request {
     @Override
     public boolean isIE() {
         return userAgent().contains("MSIE");
+    }
+
+    @Override
+    public Map<String, String> cookies() {
+        Map<String, String> map = new HashMap<>(cookies.size());
+        this.cookies.forEach((name, cookie) -> map.put(name, cookie.value()));
+        return map;
     }
 
     @Override

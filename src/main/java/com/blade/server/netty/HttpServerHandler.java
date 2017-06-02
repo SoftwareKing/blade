@@ -3,6 +3,7 @@ package com.blade.server.netty;
 import com.blade.Blade;
 import com.blade.BladeException;
 import com.blade.ioc.Ioc;
+import com.blade.kit.DateKit;
 import com.blade.kit.PathKit;
 import com.blade.kit.StringKit;
 import com.blade.mvc.RouteHandler;
@@ -36,8 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.SERVER;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -100,8 +100,15 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
                 if (interrupts == 0) {
                     Route route = routeMatcher.lookupRoute(request.method(), uri);
                     if (null != route) {
+                        request.pathParams(route.getPathParams());
                         // execute
-                        this.routeHandle(request, response, route);
+                        if (!this.routeHandle(request, response, route) && !response.isCommit()) {
+                            FullHttpResponse httpResponse = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.EMPTY_BUFFER);
+                            httpResponse.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
+                            httpResponse.headers().set(DATE, DateKit.gmtDate());
+                            httpResponse.headers().setInt(CONTENT_LENGTH, 0);
+                            ctx.writeAndFlush(httpResponse);
+                        }
                         routeMatcher.getAfter(uri).forEach(r -> this.invokeHook(request, response, r));
                     } else {
                         // 404
@@ -167,7 +174,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
      * @param response response object
      * @param route    route object
      */
-    private void routeHandle(Request request, Response response, Route route) {
+    private boolean routeHandle(Request request, Response response, Route route) {
         Object target = route.getTarget();
         if (null == target) {
             Class<?> clazz = route.getAction().getDeclaringClass();
@@ -177,8 +184,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         if (route.getTargetType() == RouteHandler.class) {
             RouteHandler routeHandler = (RouteHandler) target;
             routeHandler.handle(request, response);
+            return false;
         } else {
-            routeViewResolve.handle(request, response, route);
+            return routeViewResolve.handle(request, response, route);
         }
     }
 
@@ -190,7 +198,13 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
      * @return Return execute is ok
      */
     private int invokeHook(Request request, Response response, Route route) {
-        return routeViewResolve.invokeHook(request, response, route) ? 0 : 1;
+        if (route.getTargetType() == RouteHandler.class) {
+            RouteHandler routeHandler = (RouteHandler) route.getTarget();
+            routeHandler.handle(request, response);
+            return 0;
+        } else {
+            return routeViewResolve.invokeHook(request, response, route) ? 0 : 1;
+        }
     }
 
 }

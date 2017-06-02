@@ -148,11 +148,11 @@ public final class MethodArgument {
 
     private static Object getPathParam(Class<?> argType, PathParam pathParam, String paramName, Request request) {
         String name = StringKit.isBlank(pathParam.name()) ? paramName : pathParam.name();
-        Optional<String> val = request.pathString(name);
-        if (!val.isPresent()) {
-            val = Optional.of(pathParam.defaultValue());
+        String val = request.pathString(name);
+        if (StringKit.isBlank(val)) {
+            val = pathParam.defaultValue();
         }
-        return getRequestParam(argType, val.get());
+        return getRequestParam(argType, val);
     }
 
     private static Object parseModel(Class<?> argType, Request request, String name) {
