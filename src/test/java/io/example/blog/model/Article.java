@@ -1,4 +1,4 @@
-package com.example.blog.model;
+package io.example.blog.model;
 
 /**
  * @author biezhi

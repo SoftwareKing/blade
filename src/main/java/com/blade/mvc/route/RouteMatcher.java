@@ -167,7 +167,7 @@ public class RouteMatcher {
         }
     }
 
-    public Route lookupRoute(String httpMethod, String path) throws BladeException {
+    public Route lookupRoute(String httpMethod, String path) {
         path = parsePath(path);
         String routeKey = path + '#' + httpMethod.toUpperCase();
         Route route = staticRoutes.get(routeKey);
@@ -206,28 +206,8 @@ public class RouteMatcher {
             }
             return route;
         } catch (Exception e) {
-            throw new BladeException(e.getMessage());
+            throw new BladeException(e);
         }
-    }
-
-    /**
-     * Find a route
-     *
-     * @param httpMethod httpMethod
-     * @param path       request path
-     * @return return route object
-     */
-    public Route getRoute(String httpMethod, String path) {
-        try {
-            return lookupRoute(httpMethod, path);
-        } catch (BladeException e) {
-            Throwable t = e.getCause();
-            if (t instanceof NullPointerException) {
-            } else {
-                log.warn("", e);
-            }
-        }
-        return null;
     }
 
     /**

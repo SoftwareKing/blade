@@ -1,5 +1,6 @@
 package com.blade.mvc.http;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -14,7 +15,7 @@ public interface Session {
 
     void attribute(String name, Object value);
 
-    Set<String> attributes();
+    Map<String, Object> attributes();
 
     void removeAttribute(String name);
 

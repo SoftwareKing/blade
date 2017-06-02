@@ -244,7 +244,7 @@ public class HttpRequest implements Request {
 
     @Override
     public Session session() {
-        return null;
+        return new HttpSession();
     }
 
     @Override
@@ -253,8 +253,8 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Optional<String> contentType() {
-        return header("content-type");
+    public String contentType() {
+        return header("Content-Type").orElse("");
     }
 
     @Override
@@ -324,8 +324,8 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Set<String> attributes() {
-        return this.attrs.keySet();
+    public Map<String, Object> attributes() {
+        return this.attrs;
     }
 
     @Override

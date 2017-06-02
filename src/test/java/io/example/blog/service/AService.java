@@ -1,4 +1,4 @@
-package com.example.blog.service;
+package io.example.blog.service;
 
 import com.blade.ioc.annotation.Bean;
 
@@ -13,4 +13,7 @@ public class AService {
         System.out.println("hi a service");
     }
 
+    public void exp() {
+        throw new RuntimeException("业务异常");
+    }
 }

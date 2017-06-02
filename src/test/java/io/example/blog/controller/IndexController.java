@@ -1,4 +1,4 @@
-package com.example.blog.controller;
+package io.example.blog.controller;
 
 import com.blade.ioc.annotation.Inject;
 import com.blade.mvc.annotation.*;
@@ -6,8 +6,8 @@ import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
 import com.blade.mvc.multipart.FileItem;
 import com.blade.mvc.ui.RestResponse;
-import com.example.blog.model.Article;
-import com.example.blog.service.AService;
+import io.example.blog.model.Article;
+import io.example.blog.service.AService;
 
 /**
  * @author biezhi
@@ -26,7 +26,9 @@ public class IndexController {
     }
 
     @GetRoute(values = "/user")
-    public String userPage() {
+    public String userPage(Request request) {
+        request.attribute("name", "biezhi");
+        request.attribute("github", "https://github.com/biezhi");
         return "user.html";
     }
 
@@ -46,4 +48,16 @@ public class IndexController {
         System.out.println(fileItem);
         return RestResponse.ok();
     }
+
+    @GetRoute(values = "exp1")
+    @JSON
+    public void exp1() {
+        int a = 1 / 0;
+    }
+
+    @GetRoute(values = "exp2")
+    public void exp2() {
+        aService.exp();
+    }
+
 }

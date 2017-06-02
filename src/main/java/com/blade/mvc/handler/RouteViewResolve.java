@@ -12,6 +12,7 @@ import com.blade.mvc.route.Route;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.template.TemplateEngine;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class RouteViewResolve {
@@ -28,6 +29,14 @@ public class RouteViewResolve {
         try {
             Method actionMethod = route.getAction();
             Object target = route.getTarget();
+            Class<?> returnType = actionMethod.getReturnType();
+
+            Path path = target.getClass().getAnnotation(Path.class);
+            JSON JSON = actionMethod.getAnnotation(JSON.class);
+            boolean isRestful = (null != JSON) || (null != path && path.restful());
+            if (isRestful && !request.userAgent().contains("MSIE")) {
+                response.contentType("application/json; charset=UTF-8");
+            }
 
             int len = actionMethod.getParameterTypes().length;
             Object returnParam;
@@ -39,10 +48,7 @@ public class RouteViewResolve {
             }
 
             if (null != returnParam) {
-                Class<?> returnType = returnParam.getClass();
-                Path path = target.getClass().getAnnotation(Path.class);
-                JSON JSON = actionMethod.getAnnotation(JSON.class);
-                if ((null != path && path.restful()) || null != JSON) {
+                if (isRestful) {
                     response.json(returnParam);
                 } else {
                     if (returnType == String.class) {
@@ -54,7 +60,14 @@ public class RouteViewResolve {
                 }
             }
         } catch (Exception e) {
-            throw new BladeException(e);
+            Throwable t = e;
+            if (e instanceof InvocationTargetException) {
+                t = e.getCause();
+            }
+            if (t instanceof BladeException) {
+                throw (BladeException) t;
+            }
+            throw new BladeException(t);
         }
     }
 

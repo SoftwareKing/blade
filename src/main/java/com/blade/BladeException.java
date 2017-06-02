@@ -6,23 +6,18 @@ package com.blade;
  */
 public class BladeException extends RuntimeException {
 
-    int statusCode = 200;
-    String msg = "Execution faild";
-
     public BladeException() {
     }
 
-    public BladeException(Throwable t) {
-        super(t);
+    public BladeException(String message) {
+        super(message);
     }
 
-    public BladeException(String msg) {
-        this.msg = msg;
+    public BladeException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    public BladeException(int statusCode, String msg) {
-        this.statusCode = statusCode;
-        this.msg = msg;
+    public BladeException(Throwable cause) {
+        super(cause);
     }
-
 }

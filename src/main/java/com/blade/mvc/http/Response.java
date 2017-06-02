@@ -2,6 +2,8 @@ package com.blade.mvc.http;
 
 import com.blade.mvc.ui.ModelAndView;
 
+import java.util.Map;
+
 /**
  * @author biezhi
  *         2017/5/31
@@ -38,6 +40,12 @@ public interface Response {
      * @return Return Response
      */
     Response contentType(String contentType);
+
+    String contentType();
+
+    Map<String, String> headers();
+
+    String header(String name);
 
     /**
      * Setting header

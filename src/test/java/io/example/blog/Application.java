@@ -1,7 +1,6 @@
-package com.example.blog;
+package io.example.blog;
 
 import com.blade.Blade;
-import com.blade.kit.JsonKit;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,8 +1,10 @@
 package com.blade.server.netty;
 
 import com.blade.Blade;
+import com.blade.BladeException;
 import com.blade.ioc.Ioc;
 import com.blade.kit.PathKit;
+import com.blade.kit.StringKit;
 import com.blade.mvc.RouteHandler;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
@@ -12,6 +14,7 @@ import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
 import com.blade.mvc.route.Route;
 import com.blade.mvc.route.RouteMatcher;
+import com.blade.mvc.ui.DefaultUI;
 import com.blade.mvc.ui.template.TemplateEngine;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -26,15 +29,15 @@ import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -82,26 +85,47 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         log.debug("{}\t{}\t{}", request.protocol(), request.method(), uri);
 
         // 判断是否是静态资源
-        if (isStaticFile(uri)) {
-            staticFileHandler.execute(ctx, request, response, uri);
-        } else {
-            WebContext.set(new WebContext(request, response));
-            // web hook
-            int interrupts = routeMatcher.getBefore(uri).stream()
-                    .mapToInt(route -> this.invokeHook(request, response, route)).sum();
+        try {
+            if (isStaticFile(uri)) {
+                staticFileHandler.execute(ctx, request, response, uri);
+            } else {
+                WebContext.set(new WebContext(request, response));
+                // web hook
+                int interrupts = routeMatcher.getBefore(uri).stream()
+                        .mapToInt(route -> this.invokeHook(request, response, route)).sum();
 
-            if (interrupts == 0) {
-                Route route = routeMatcher.getRoute(request.method(), uri);
-                if (null != route) {
-                    // execute
-                    this.routeHandle(request, response, route);
-                    routeMatcher.getAfter(uri).forEach(r -> this.invokeHook(request, response, r));
-                } else {
-                    // 404
-                    sendError(ctx, NOT_FOUND);
+                if (interrupts == 0) {
+                    Route route = routeMatcher.lookupRoute(request.method(), uri);
+                    if (null != route) {
+                        // execute
+                        this.routeHandle(request, response, route);
+                        routeMatcher.getAfter(uri).forEach(r -> this.invokeHook(request, response, r));
+                    } else {
+                        // 404
+                        sendError(ctx, NOT_FOUND, String.format(DefaultUI.VIEW_404, uri));
+                    }
                 }
+                WebContext.remove();
             }
-            WebContext.remove();
+        } catch (BladeException e) {
+            log.error("", e);
+
+            String error = e.getMessage();
+
+            String contentType = response.contentType();
+            if (contentType.contains("html")) {
+                StringWriter sw = new StringWriter();
+                PrintWriter writer = new PrintWriter(sw);
+                writer.write(String.format(DefaultUI.HTML, e.getClass() + " : " + e.getMessage()));
+                writer.write("\r\n");
+                e.printStackTrace(writer);
+                writer.println(DefaultUI.END);
+                error = sw.toString();
+            }
+            sendError(ctx, INTERNAL_SERVER_ERROR, error);
+        } catch (Exception e) {
+            log.error("", e);
+            sendError(ctx, INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -119,9 +143,15 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     }
 
     private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
+        sendError(ctx, status, "");
+    }
+
+    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status, String content) {
+        boolean isHtml = StringKit.isNotBlank(content);
+        content = isHtml ? content : "Failure: " + status + "\r\n";
         FullHttpResponse response = new DefaultFullHttpResponse(
-                HTTP_1_1, status, Unpooled.copiedBuffer("Failure: " + status + "\r\n", CharsetUtil.UTF_8));
-        response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
+                HTTP_1_1, status, Unpooled.copiedBuffer(content, CharsetUtil.UTF_8));
+        response.headers().set(CONTENT_TYPE, isHtml ? "text/html; charset=UTF-8" : "text/plain; charset=UTF-8");
         // Close the connection as soon as the error message is sent.
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
     }
@@ -151,8 +181,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     /**
      * Methods to perform the hooks
      *
-     * @param request      request object
-     * @param response     response object
+     * @param request  request object
+     * @param response response object
      * @return Return execute is ok
      */
     private int invokeHook(Request request, Response response, Route route) {

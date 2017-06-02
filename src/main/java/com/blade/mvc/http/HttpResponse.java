@@ -18,10 +18,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 
 /**
  * @author biezhi
@@ -33,7 +36,6 @@ public class HttpResponse implements Response {
 
     private ChannelHandlerContext ctx;
     private FullHttpResponse response;
-
 
     private String contentType = "text/html; charset=UTF-8";
     private HttpVersion httpVersion = HttpVersion.HTTP_1_1;
@@ -80,6 +82,23 @@ public class HttpResponse implements Response {
     public Response contentType(String contentType) {
         this.contentType = contentType;
         return this;
+    }
+
+    @Override
+    public String contentType() {
+        return this.contentType;
+    }
+
+    @Override
+    public Map<String, String> headers() {
+        Map<String, String> map = new HashMap<>(this.headers.size());
+        this.headers.forEach(header -> map.put(header.getKey(), header.getValue()));
+        return map;
+    }
+
+    @Override
+    public String header(String name) {
+        return this.headers.get(name);
     }
 
     @Override
@@ -138,14 +157,13 @@ public class HttpResponse implements Response {
     @Override
     public void text(String text) {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(text, CharsetUtil.UTF_8));
-        headers.set(CONTENT_TYPE, "text/plain; charset=UTF-8");
+        this.contentType = "text/plain; charset=UTF-8";
         this.send(response);
     }
 
     @Override
     public void html(String html) {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(html, CharsetUtil.UTF_8));
-        headers.set(CONTENT_TYPE, "text/html; charset=UTF-8");
         this.send(response);
     }
 
@@ -153,10 +171,8 @@ public class HttpResponse implements Response {
     public void json(String json) {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(json, CharsetUtil.UTF_8));
         String userAgent = WebContext.request().userAgent();
-        if (userAgent.contains("MSIE")) {
-            headers.set(CONTENT_TYPE, "text/html; charset=UTF-8");
-        } else {
-            headers.set(CONTENT_TYPE, "application/json; charset=UTF-8");
+        if (!userAgent.contains("MSIE")) {
+            this.contentType = "application/json; charset=UTF-8";
         }
         this.send(response);
     }
@@ -175,17 +191,13 @@ public class HttpResponse implements Response {
     public void render(ModelAndView modelAndView) {
         ByteBuf buffer = Unpooled.buffer();
         Writer writer = new PrintWriter(new ByteBufOutputStream(buffer));
-        try {
-            templateEngine.render(modelAndView, writer);
-            FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), buffer);
-            headers.set(CONTENT_TYPE, "text/html; charset=UTF-8");
-            this.send(response);
-        } catch (Exception e) {
-            log.error("", e);
-        }
+        templateEngine.render(modelAndView, writer);
+        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), buffer);
+        this.send(response);
     }
 
     private void send(FullHttpResponse response) {
+        response.headers().set(CONTENT_TYPE, this.contentType);
         response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
         HttpHeaders httpHeaders = response.headers().add(this.headers);
         this.cookies.forEach(cookie -> httpHeaders.add(SET_COOKIE.toString(), ServerCookieEncoder.LAX.encode(cookie)));

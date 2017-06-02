@@ -1,33 +1,41 @@
 package com.blade.mvc.ui.template;
 
 import com.blade.BladeException;
-import com.blade.kit.BladeKit;
 import com.blade.kit.IOKit;
+import com.blade.mvc.WebContext;
+import com.blade.mvc.http.Request;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.server.netty.BladeServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
+ * default template implment
+ *
  * @author biezhi
  *         2017/5/31
  */
 public class DefaultEngine implements TemplateEngine {
-
-    private static final Logger log = LoggerFactory.getLogger(DefaultEngine.class);
 
     @Override
     public void render(ModelAndView modelAndView, Writer writer) {
         String view = modelAndView.getView();
         String viewPath = BladeServer.CLASSPATH + "templates" + File.separator + view;
         try {
+            Request request = WebContext.request();
             String body = IOKit.readToString(viewPath);
-            writer.write(body);
+
+            Map<String, Object> attrs = new HashMap<>();
+            attrs.putAll(request.attributes());
+            attrs.putAll(request.session().attributes());
+
+            String result = BladeTemplate.template(body, attrs).fmt();
+            writer.write(result);
         } catch (Exception e) {
-            throw new BladeException(e.getMessage());
+            throw new BladeException(e);
         } finally {
             IOKit.closeQuietly(writer);
         }

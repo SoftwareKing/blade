@@ -1,4 +1,4 @@
-package com.example.blog.context;
+package io.example.blog.context;
 
 import com.blade.ioc.annotation.Bean;
 import com.blade.lifecycle.Event;

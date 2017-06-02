@@ -1,12 +1,15 @@
 package com.blade.mvc.http;
 
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author biezhi
  *         2017/5/31
  */
 public class HttpSession implements Session {
+
+    private Map<String, Object> attrs = new HashMap<>();
 
     @Override
     public <T> T attribute(String name) {
@@ -19,8 +22,8 @@ public class HttpSession implements Session {
     }
 
     @Override
-    public Set<String> attributes() {
-        return null;
+    public Map<String, Object> attributes() {
+        return attrs;
     }
 
     @Override

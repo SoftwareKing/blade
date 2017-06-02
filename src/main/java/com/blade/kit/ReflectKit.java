@@ -51,11 +51,13 @@ public class ReflectKit {
      * @throws IllegalArgumentException
      * @throws IllegalAccessException
      */
-    public static Object invokeMehod(Object bean, Method method, Object... args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public static Object invokeMehod(Object bean, Method method, Object... args) throws Exception {
         Class<?>[] types = method.getParameterTypes();
         int argCount = args == null ? 0 : args.length;
         // 参数个数对不上
-//        ExceptionKit.makeRunTimeWhen(argCount != types.length, "%s in %s", method.getName(), bean);
+        if (argCount != types.length) {
+            throw new IllegalStateException(String.format("%s in %s", method.getName(), bean));
+        }
 
         // 转参数类型
         for (int i = 0; i < argCount; i++) {

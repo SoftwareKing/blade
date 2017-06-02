@@ -6,7 +6,6 @@ import io.netty.buffer.ByteBuf;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author biezhi
@@ -188,7 +187,7 @@ public interface Request {
     /**
      * @return Return contentType
      */
-    Optional<String> contentType();
+    String contentType();
 
     /**
      * @return Return whether to use the SSL connection
@@ -264,7 +263,7 @@ public interface Request {
     /**
      * @return Return all Attribute in Request
      */
-    Set<String> attributes();
+    Map<String, Object> attributes();
 
     Map<String, FileItem> fileItems();
 
