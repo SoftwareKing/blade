@@ -72,32 +72,32 @@ public class Blade {
     }
 
     public Blade get(String path, RouteHandler routeHandler) {
-        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.GET);
+        routeMatcher.addRoute(path, routeHandler, HttpMethod.GET);
         return this;
     }
 
     public Blade post(String path, RouteHandler routeHandler) {
-        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.POST);
+        routeMatcher.addRoute(path, routeHandler, HttpMethod.POST);
         return this;
     }
 
     public Blade put(String path, RouteHandler routeHandler) {
-        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.PUT);
+        routeMatcher.addRoute(path, routeHandler, HttpMethod.PUT);
         return this;
     }
 
     public Blade delete(String path, RouteHandler routeHandler) {
-        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.DELETE);
+        routeMatcher.addRoute(path, routeHandler, HttpMethod.DELETE);
         return this;
     }
 
     public Blade before(String path, RouteHandler routeHandler) {
-        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.BEFORE);
+        routeMatcher.addRoute(path, routeHandler, HttpMethod.BEFORE);
         return this;
     }
 
     public Blade after(String path, RouteHandler routeHandler) {
-        routeMatcher.addAndRegsiter(path, routeHandler, HttpMethod.AFTER);
+        routeMatcher.addRoute(path, routeHandler, HttpMethod.AFTER);
         return this;
     }
 

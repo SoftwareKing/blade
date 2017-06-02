@@ -106,23 +106,6 @@ public class RouteMatcher {
         return route;
     }
 
-    public void addAndRegsiter(String path, RouteHandler handler, HttpMethod httpMethod) {
-        Route route = this.addRoute(path, handler, httpMethod);
-        this.registerRoute(route);
-
-        patternBuilders.keySet().stream()
-                .filter(hm -> hm != HttpMethod.BEFORE && hm != HttpMethod.AFTER)
-                .forEach(hm -> {
-                    StringBuilder patternBuilder = patternBuilders.get(hm);
-                    if (patternBuilder.length() > 1 && patternBuilder.charAt(patternBuilder.length() - 1) != '$') {
-                        patternBuilder.setCharAt(patternBuilder.length() - 1, '$');
-                    }
-                    log.debug("Fast Route Method: {}, regex: {}", hm, patternBuilder);
-                    regexRoutePatterns.put(hm, Pattern.compile(patternBuilder.toString()));
-                });
-
-    }
-
     public Route addRoute(String path, RouteHandler handler, HttpMethod httpMethod) {
         try {
             return addRoute(httpMethod, path, handler, METHOD_NAME);
@@ -337,16 +320,16 @@ public class RouteMatcher {
         Stream.of(routes.values(), hooks.values())
                 .flatMap(c -> c.stream()).forEach(this::registerRoute);
 
-        patternBuilders.forEach((httpMethod, patternBuilder) -> {
-            if (httpMethod != HttpMethod.BEFORE && httpMethod != HttpMethod.AFTER) {
-//                if (patternBuilder.length() > 1) {
-//                    patternBuilder.setCharAt(patternBuilder.length() - 1, '$');
-//                }
-                log.debug("Fast Route Method: {}, regex: {}", httpMethod, patternBuilder);
-                regexRoutePatterns.put(httpMethod, Pattern.compile(patternBuilder.toString()));
-            }
-        });
-
+        patternBuilders.keySet().stream()
+                .filter(httpMethod -> httpMethod != HttpMethod.BEFORE && httpMethod != HttpMethod.AFTER)
+                .forEach(httpMethod -> {
+                    StringBuilder patternBuilder = patternBuilders.get(httpMethod);
+                    if (patternBuilder.length() > 1) {
+                        patternBuilder.setCharAt(patternBuilder.length() - 1, '$');
+                    }
+                    log.debug("Fast Route Method: {}, regex: {}", httpMethod, patternBuilder);
+                    regexRoutePatterns.put(httpMethod, Pattern.compile(patternBuilder.toString()));
+                });
     }
 
     public void registerRoute(Route route) {
@@ -371,9 +354,7 @@ public class RouteMatcher {
             int i = indexes.get(httpMethod);
             regexRoutes.get(httpMethod).put(i, new FastRouteMappingInfo(route, uriVariableNames));
             indexes.put(httpMethod, i + uriVariableNames.size() + 1);
-            StringBuilder oldPattern = patternBuilders.get(httpMethod);
-            oldPattern.append("(").append(matcher.replaceAll(PATH_VARIABLE_REPLACE)).append(")|");
-            System.out.println(patternBuilders.get(httpMethod));
+            patternBuilders.get(httpMethod).append("(").append(matcher.replaceAll(PATH_VARIABLE_REPLACE)).append(")|");
         } else {
             String routeKey = path + '#' + httpMethod.toString();
             if (staticRoutes.get(routeKey) == null) {

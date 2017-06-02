@@ -3,12 +3,9 @@ package com.blade;
 import com.blade.mvc.RouteHandler;
 import com.blade.mvc.http.HttpMethod;
 import com.github.kevinsawicki.http.HttpRequest;
-import com.mashape.unirest.http.Unirest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author biezhi
@@ -24,12 +21,11 @@ public class BaseTestCase {
 
     @BeforeClass
     public static void setup() throws Exception {
-        app = Blade.me()
-                .before("/.*", (req, res) -> {
-                    System.out.println("before...");
-                })
-                .start().await();
-        TimeUnit.SECONDS.sleep(1);
+        app = Blade.me();
+    }
+
+    protected void start(Blade blade) {
+        blade.start().await();
     }
 
     @After
