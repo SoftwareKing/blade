@@ -25,7 +25,7 @@ public class RouteBuilder {
         this.routeMatcher = routeMatcher;
     }
 
-    public void addWebHook(final Class<?> webHook) {
+    public void addWebHook(final Class<?> webHook, Object hook) {
         Path path = webHook.getAnnotation(Path.class);
         String partten = "/.*";
         if (null != path) {
@@ -34,8 +34,8 @@ public class RouteBuilder {
 
         Method before = ReflectKit.getMethod(webHook, "before", Invoker.class);
         Method after = ReflectKit.getMethod(webHook, "after", Invoker.class);
-        buildRoute(webHook, before, partten, HttpMethod.BEFORE);
-        buildRoute(webHook, after, partten, HttpMethod.AFTER);
+        buildRoute(webHook, hook, before, partten, HttpMethod.BEFORE);
+        buildRoute(webHook, hook, after, partten, HttpMethod.AFTER);
     }
 
     /**
@@ -43,7 +43,7 @@ public class RouteBuilder {
      *
      * @param router resolve the routing class
      */
-    public void addRouter(final Class<?> router) {
+    public void addRouter(final Class<?> router, Object controller) {
 
         Method[] methods = router.getMethods();
         if (null == methods || methods.length == 0) {
@@ -70,7 +70,7 @@ public class RouteBuilder {
                 if (paths.length > 0) {
                     for (String path : paths) {
                         String pathV = getRoutePath(path, nameSpace, suffix);
-                        this.buildRoute(router, method, pathV, methodType);
+                        this.buildRoute(router, controller, method, pathV, methodType);
                     }
                 }
             }
@@ -95,8 +95,8 @@ public class RouteBuilder {
      * @param path       route path
      * @param method     route httpmethod
      */
-    private void buildRoute(Class<?> clazz, Method execMethod, String path, HttpMethod method) {
-        routeMatcher.addRoute(method, path, null, clazz, execMethod);
+    private void buildRoute(Class<?> clazz, Object controller, Method execMethod, String path, HttpMethod method) {
+        routeMatcher.addRoute(method, path, controller, clazz, execMethod);
     }
 
 }

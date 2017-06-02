@@ -160,16 +160,21 @@ public class BladeServer {
     private List<StartedEvent> startedEvents = new ArrayList<>();
 
     private void parseCls(Class<?> clazz) {
-        if (null != clazz.getAnnotation(Bean.class))
-            blade.register(clazz);
+        if (null != clazz.getAnnotation(Bean.class)) blade.register(clazz);
         if (null != clazz.getAnnotation(Path.class)) {
             if (null == clazz.getAnnotation(Bean.class)) {
                 blade.register(clazz);
             }
-            routeBuilder.addRouter(clazz);
+            Object controller = blade.ioc().getBean(clazz);
+            routeBuilder.addRouter(clazz, controller);
         }
-        if (ReflectKit.hasInterface(clazz, WebHook.class))
-            routeBuilder.addWebHook(clazz);
+        if (ReflectKit.hasInterface(clazz, WebHook.class)) {
+            if (null == clazz.getAnnotation(Bean.class)) {
+                blade.register(clazz);
+            }
+            Object hook = blade.ioc().getBean(clazz);
+            routeBuilder.addWebHook(clazz, hook);
+        }
         if (ReflectKit.hasInterface(clazz, BeanProcessor.class))
             beanProcessors.add((BeanProcessor) blade.ioc().getBean(clazz));
         if (ReflectKit.hasInterface(clazz, StartedEvent.class))
