@@ -1,18 +1,9 @@
 package com.blade.kit;
 
-import com.blade.ioc.BeanDefine;
-import com.blade.ioc.ClassDefine;
-import com.blade.ioc.FieldInjector;
-import com.blade.ioc.Ioc;
-import com.blade.ioc.annotation.Inject;
-import com.blade.ioc.annotation.InjectWith;
-
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -30,20 +21,6 @@ public class ReflectKit {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    private static final List<Class> primitiveTypes = Arrays.asList(int.class, Integer.class, long.class, Long.class,
-            boolean.class, Boolean.class, float.class, Float.class, double.class, Double.class, byte.class, Byte.class, short.class, Short.class,
-            String.class);
-
-    /**
-     * 是否是基本数据类型
-     *
-     * @param type
-     * @return
-     */
-    public static boolean isBasicType(Class<?> type) {
-        return primitiveTypes.contains(type);
     }
 
     public static Object convert(Class<?> type, String value) {
@@ -130,6 +107,60 @@ public class ReflectKit {
         try {
             return cls.getMethod(methodName, types);
         } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static boolean isPrimitive(Class<?> cls) {
+        return cls == boolean.class
+                || cls == Boolean.class
+                || cls == double.class
+                || cls == Double.class
+                || cls == float.class
+                || cls == Float.class
+                || cls == short.class
+                || cls == Short.class
+                || cls == int.class
+                || cls == Integer.class
+                || cls == long.class
+                || cls == Long.class
+                || cls == String.class
+                || cls == byte.class
+                || cls == Byte.class
+                || cls == char.class
+                || cls == Character.class;
+    }
+
+    public static boolean isPrimitive(Object cls) {
+        return cls instanceof Boolean
+                || cls instanceof Double
+                || cls instanceof Float
+                || cls instanceof Short
+                || cls instanceof Integer
+                || cls instanceof Long
+                || cls instanceof String
+                || cls instanceof Byte
+                || cls instanceof Character;
+    }
+
+    public static Object defaultPrimitiveValue(Class<?> primitiveCls) {
+        if (primitiveCls == boolean.class) {
+            return false;
+        } else if (primitiveCls == double.class) {
+            return 0d;
+        } else if (primitiveCls == float.class) {
+            return 0f;
+        } else if (primitiveCls == short.class) {
+            return (short) 0;
+        } else if (primitiveCls == int.class) {
+            return 0;
+        } else if (primitiveCls == long.class) {
+            return 0L;
+        } else if (primitiveCls == byte.class) {
+            return (byte) 0;
+        } else if (primitiveCls == char.class) {
+            return '\0';
+        } else {
             return null;
         }
     }

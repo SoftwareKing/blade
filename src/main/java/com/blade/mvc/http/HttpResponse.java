@@ -138,14 +138,14 @@ public class HttpResponse implements Response {
     @Override
     public void text(String text) {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(text, CharsetUtil.UTF_8));
-        response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
+        headers.set(CONTENT_TYPE, "text/plain; charset=UTF-8");
         this.send(response);
     }
 
     @Override
     public void html(String html) {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(html, CharsetUtil.UTF_8));
-        response.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
+        headers.set(CONTENT_TYPE, "text/html; charset=UTF-8");
         this.send(response);
     }
 
@@ -154,9 +154,9 @@ public class HttpResponse implements Response {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(json, CharsetUtil.UTF_8));
         String userAgent = WebContext.request().userAgent();
         if (userAgent.contains("MSIE")) {
-            response.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
+            headers.set(CONTENT_TYPE, "text/html; charset=UTF-8");
         } else {
-            response.headers().set(CONTENT_TYPE, "application/json; charset=UTF-8");
+            headers.set(CONTENT_TYPE, "application/json; charset=UTF-8");
         }
         this.send(response);
     }
@@ -178,7 +178,7 @@ public class HttpResponse implements Response {
         try {
             templateEngine.render(modelAndView, writer);
             FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), buffer);
-            response.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
+            headers.set(CONTENT_TYPE, "text/html; charset=UTF-8");
             this.send(response);
         } catch (Exception e) {
             log.error("", e);

@@ -1,5 +1,6 @@
 package com.blade.kit.ason;
 
+import com.blade.kit.ReflectKit;
 import com.blade.kit.json.JSONArray;
 import com.blade.kit.json.JSONObject;
 
@@ -46,7 +47,7 @@ public class AsonSerializer {
                 || object instanceof JSONObject
                 || object instanceof JSONArray) {
             throw new IllegalArgumentException("You cannot serialize Ason or AsonArray.");
-        } else if (isPrimitive(object)) {
+        } else if (ReflectKit.isPrimitive(object)) {
             throw new IllegalArgumentException(
                     "You cannot serialize primitive types (" + object.getClass().getName() + ").");
         } else if (object.getClass().isArray()) {
@@ -98,7 +99,7 @@ public class AsonSerializer {
                     cls.getComponentType() == Object.class && value != null
                             ? value.getClass()
                             : cls.getComponentType();
-            if (isPrimitive(itemCls)) {
+            if (ReflectKit.isPrimitive(itemCls)) {
                 result.add(value);
                 continue;
             }
@@ -135,7 +136,7 @@ public class AsonSerializer {
         if (isNull(fieldValue)) {
             return null;
         }
-        if (isPrimitive(fieldValue)
+        if (ReflectKit.isPrimitive(fieldValue)
                 || fieldValue instanceof JSONObject
                 || fieldValue instanceof JSONArray
                 || fieldValue instanceof Ason
@@ -158,7 +159,7 @@ public class AsonSerializer {
     public <T> T deserialize(Ason ason, Class<T> cls) {
         if (isNull(ason)) {
             return null;
-        } else if (isPrimitive(cls)) {
+        } else if (ReflectKit.isPrimitive(cls)) {
             throw new IllegalArgumentException(
                     "You cannot deserialize an object to a primitive type (" + cls.getName() + ").");
         } else if (cls == AsonArray.class || cls == JSONArray.class) {
@@ -179,7 +180,7 @@ public class AsonSerializer {
 
         for (String name : cacheEntry.fields()) {
             final Class<?> type = cacheEntry.fieldType(name);
-            if (isPrimitive(type)
+            if (ReflectKit.isPrimitive(type)
                     || type == JSONObject.class
                     || type == JSONArray.class
                     || type == Ason.class
@@ -228,12 +229,12 @@ public class AsonSerializer {
         for (int i = 0; i < json.size(); i++) {
             Object item = json.get(i);
             if (isNull(item)) {
-                Array.set(newArray, i, defaultPrimitiveValue(component));
+                Array.set(newArray, i, ReflectKit.defaultPrimitiveValue(component));
                 continue;
             }
 
             final Class<?> itemType = component == Object.class ? item.getClass() : component;
-            if (isPrimitive(itemType)) {
+            if (ReflectKit.isPrimitive(itemType)) {
                 if (itemType == char.class || itemType == Character.class) {
                     item = ((String) item).charAt(0);
                 } else if (itemType == short.class || itemType == Short.class) {

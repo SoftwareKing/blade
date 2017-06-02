@@ -19,8 +19,6 @@ public class Application {
         map.put("name", "blade");
         map.put("jdk", 1.8);
 
-        System.out.println(JsonKit.toString(map));
-
         Blade.me()
                 .get("/json", ((request, response) -> response.json(map)))
                 .showFileList(true)

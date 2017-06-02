@@ -21,6 +21,10 @@ public class EncrypKit {
 
     private static final char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
+    private EncrypKit() {
+        throw new IllegalStateException("EncrypKit shouldn't be constructed!");
+    }
+
     /*********************** 哈希加密相关 ***********************/
     /**
      * MD2加密

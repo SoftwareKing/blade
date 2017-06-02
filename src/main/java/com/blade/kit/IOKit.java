@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 public final class IOKit {
 
     private IOKit() {
+        throw new IllegalStateException("IOKit shouldn't be constructed!");
     }
 
     public static void closeQuietly(Closeable closeable) {

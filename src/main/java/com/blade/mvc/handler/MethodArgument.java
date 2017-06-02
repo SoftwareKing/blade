@@ -60,7 +60,7 @@ public final class MethodArgument {
                     args[i] = request.fileItem(name);
                 }
             } else {
-                if (ReflectKit.isBasicType(argType)) {
+                if (ReflectKit.isPrimitive(argType)) {
                     args[i] = request.query(paramName);
                 } else {
                     if (argType == Invoker.class) {
@@ -89,7 +89,7 @@ public final class MethodArgument {
     private static Object getQueryParam(Class<?> argType, QueryParam queryParam, String paramName, Request request) throws BladeException {
         String name = StringKit.isBlank(queryParam.name()) ? paramName : queryParam.name();
 
-        if (ReflectKit.isBasicType(argType)) {
+        if (ReflectKit.isPrimitive(argType)) {
             Optional<String> val = request.query(name);
             boolean required = queryParam.required();
             if (!val.isPresent()) {

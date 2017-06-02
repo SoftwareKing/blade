@@ -15,6 +15,7 @@ import java.util.Date;
 public final class DateKit {
 
     private DateKit() {
+        throw new IllegalStateException("DateKit shouldn't be constructed!");
     }
 
     /**

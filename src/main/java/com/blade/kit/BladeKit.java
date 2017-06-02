@@ -19,6 +19,9 @@ import java.util.*;
  */
 public class BladeKit {
 
+    private BladeKit() {
+    }
+
     public static String flowAutoShow(int value) {
         int kb = 1024;
         int mb = 1048576;

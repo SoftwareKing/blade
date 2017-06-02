@@ -26,6 +26,13 @@ public final class StringKit {
         return null == str || "".equals(str.trim());
     }
 
+    public static boolean isNumber(String string) {
+        return string.chars().filter(StringKit::notIsDigit).count() > 0;
+    }
+
+    private static boolean notIsDigit(int c) {
+        return !Character.isDigit(c);
+    }
 
     /**
      * 在字符串左侧填充一定数量的特殊字符

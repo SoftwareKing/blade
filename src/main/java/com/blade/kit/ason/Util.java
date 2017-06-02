@@ -1,5 +1,6 @@
 package com.blade.kit.ason;
 
+import com.blade.kit.StringKit;
 import com.blade.kit.json.JSONArray;
 import com.blade.kit.json.JSONObject;
 
@@ -7,7 +8,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -17,8 +17,7 @@ import java.util.stream.Stream;
  */
 public class Util {
 
-    public Util() {
-        throw new IllegalStateException("Util shouldn't be constructed!");
+    private Util() {
     }
 
     public static String[] splitPath(String key) {
@@ -36,15 +35,6 @@ public class Util {
         }
         result.add(key.substring(start).replace("\\.", "."));
         return result.toArray(new String[result.size()]);
-    }
-
-    public static boolean isNumber(String string) {
-        for (char c : string.toCharArray()) {
-            if (!Character.isDigit(c)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     public static Object followPath(
@@ -80,7 +70,7 @@ public class Util {
                 // A dollar sign is escaped
                 currentKey = currentKey.substring(1);
             } else if (currentKey.startsWith("$")) {
-                if (isNumber(currentKey.substring(1))) {
+                if (StringKit.isNumber(currentKey.substring(1))) {
                     // This is an array index key
                     final int index = Integer.parseInt(currentKey.substring(1));
                     if (!(parent instanceof JSONArray)) {
@@ -143,7 +133,7 @@ public class Util {
             return (T) ((JSONObject) target).opt(lastKey);
         } else if (target instanceof JSONArray
                 && lastKey.startsWith("$")
-                && isNumber(lastKey.substring(1))) {
+                && StringKit.isNumber(lastKey.substring(1))) {
             int index = Integer.parseInt(lastKey.substring(1));
             return (T) ((JSONArray) target).opt(index);
         } else {
@@ -169,60 +159,6 @@ public class Util {
         }
         constructor.setAccessible(true);
         return constructor;
-    }
-
-    public static boolean isPrimitive(Class<?> cls) {
-        return cls == boolean.class
-                || cls == Boolean.class
-                || cls == double.class
-                || cls == Double.class
-                || cls == float.class
-                || cls == Float.class
-                || cls == short.class
-                || cls == Short.class
-                || cls == int.class
-                || cls == Integer.class
-                || cls == long.class
-                || cls == Long.class
-                || cls == String.class
-                || cls == byte.class
-                || cls == Byte.class
-                || cls == char.class
-                || cls == Character.class;
-    }
-
-    public static boolean isPrimitive(Object cls) {
-        return cls instanceof Boolean
-                || cls instanceof Double
-                || cls instanceof Float
-                || cls instanceof Short
-                || cls instanceof Integer
-                || cls instanceof Long
-                || cls instanceof String
-                || cls instanceof Byte
-                || cls instanceof Character;
-    }
-
-    public static Object defaultPrimitiveValue(Class<?> primitiveCls) {
-        if (primitiveCls == boolean.class) {
-            return false;
-        } else if (primitiveCls == double.class) {
-            return 0d;
-        } else if (primitiveCls == float.class) {
-            return 0f;
-        } else if (primitiveCls == short.class) {
-            return (short) 0;
-        } else if (primitiveCls == int.class) {
-            return 0;
-        } else if (primitiveCls == long.class) {
-            return 0L;
-        } else if (primitiveCls == byte.class) {
-            return (byte) 0;
-        } else if (primitiveCls == char.class) {
-            return '\0';
-        } else {
-            return null;
-        }
     }
 
     public static boolean isList(Class<?> cls) {

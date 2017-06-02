@@ -1,28 +1,18 @@
 package com.blade.kit.json;
 
-import static com.blade.kit.ason.Util.defaultPrimitiveValue;
-import static com.blade.kit.ason.Util.getDefaultConstructor;
-import static com.blade.kit.ason.Util.isJsonArray;
-import static com.blade.kit.ason.Util.isList;
-import static com.blade.kit.ason.Util.isNull;
-import static com.blade.kit.ason.Util.isNumber;
-import static com.blade.kit.ason.Util.listGenericType;
-import static com.blade.kit.ason.Util.setFieldValue;
-import static com.blade.kit.ason.Util.shouldIgnore;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import com.blade.kit.ReflectKit;
+import com.blade.kit.StringKit;
+import com.blade.kit.ason.Ason;
+import com.blade.kit.ason.AsonArray;
+import com.blade.kit.ason.AsonIgnore;
+import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.blade.kit.ason.Ason;
-import com.blade.kit.ason.AsonArray;
-import com.blade.kit.ason.AsonIgnore;
-import com.blade.kit.ason.Util;
-import org.junit.Test;
+import static com.blade.kit.ason.Util.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -37,15 +27,6 @@ public class UtilTest {
 
     @SuppressWarnings({"FieldCanBeLocal", "unused", "MismatchedQueryAndUpdateOfCollection"})
     private List<Ason> listField;
-
-    @Test
-    public void test_ctor() {
-        try {
-            new Util();
-            assertFalse("Util class shouldn't be constructed!", false);
-        } catch (IllegalStateException ignored) {
-        }
-    }
 
     @Test
     public void test_is_list_cls() {
@@ -65,15 +46,15 @@ public class UtilTest {
 
     @Test
     public void test_is_number_true() {
-        assertTrue(isNumber("1234"));
-        assertTrue(isNumber("67891023231"));
+        assertTrue(StringKit.isNumber("1234"));
+        assertTrue(StringKit.isNumber("67891023231"));
     }
 
     @Test
     public void test_is_number_false() {
-        assertFalse(isNumber("hi"));
-        assertFalse(isNumber("@1234"));
-        assertFalse(isNumber("1234!%"));
+        assertFalse(StringKit.isNumber("hi"));
+        assertFalse(StringKit.isNumber("@1234"));
+        assertFalse(StringKit.isNumber("1234!%"));
     }
 
     @Test
@@ -129,16 +110,16 @@ public class UtilTest {
 
     @Test
     public void test_default_primitive() throws Exception {
-        assertEquals(false, defaultPrimitiveValue(boolean.class));
-        assertEquals(0d, defaultPrimitiveValue(double.class));
-        assertEquals(0f, defaultPrimitiveValue(float.class));
-        assertEquals((short) 0, defaultPrimitiveValue(short.class));
-        assertEquals(0, defaultPrimitiveValue(int.class));
-        assertEquals(0L, defaultPrimitiveValue(long.class));
-        assertEquals((byte) 0, defaultPrimitiveValue(byte.class));
-        assertEquals('\0', defaultPrimitiveValue(char.class));
-        assertNull(defaultPrimitiveValue(String.class));
-        assertNull(defaultPrimitiveValue(Character.class));
+        assertEquals(false, ReflectKit.defaultPrimitiveValue(boolean.class));
+        assertEquals(0d, ReflectKit.defaultPrimitiveValue(double.class));
+        assertEquals(0f, ReflectKit.defaultPrimitiveValue(float.class));
+        assertEquals((short) 0, ReflectKit.defaultPrimitiveValue(short.class));
+        assertEquals(0, ReflectKit.defaultPrimitiveValue(int.class));
+        assertEquals(0L, ReflectKit.defaultPrimitiveValue(long.class));
+        assertEquals((byte) 0, ReflectKit.defaultPrimitiveValue(byte.class));
+        assertEquals('\0', ReflectKit.defaultPrimitiveValue(char.class));
+        assertNull(ReflectKit.defaultPrimitiveValue(String.class));
+        assertNull(ReflectKit.defaultPrimitiveValue(Character.class));
     }
 
     @SuppressWarnings("unused")
