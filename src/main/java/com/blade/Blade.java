@@ -1,12 +1,12 @@
 package com.blade;
 
-import com.blade.mvc.http.HttpMethod;
 import com.blade.ioc.Ioc;
 import com.blade.ioc.SimpleIoc;
 import com.blade.lifecycle.Event;
 import com.blade.lifecycle.EventListener;
 import com.blade.lifecycle.EventManager;
 import com.blade.mvc.RouteHandler;
+import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.template.DefaultEngine;
 import com.blade.mvc.ui.template.TemplateEngine;
@@ -45,7 +45,8 @@ public class Blade {
     private EventManager eventManager = new EventManager();
     private TemplateEngine templateEngine = new DefaultEngine();
     private Ioc ioc = new SimpleIoc();
-    private Set<String> statics = new HashSet<>(Arrays.asList("/favicon.ico", "/static/", "/upload/"));
+
+    private Set<String> statics = new HashSet<>(Arrays.asList("/favicon.ico", "/static/", "/upload/", "/webjars/"));
 
     private CountDownLatch latch = new CountDownLatch(1);
 

@@ -29,6 +29,12 @@ public final class IOKit {
         return crunchifyBufferReader.lines().collect(Collectors.joining());
     }
 
+    public static String readToString(InputStream input) throws IOException {
+        try (BufferedReader buffer = new BufferedReader(new InputStreamReader(input))) {
+            return buffer.lines().collect(Collectors.joining("\n"));
+        }
+    }
+
     public static void copyFileUsingFileChannels(File source, File dest) throws IOException {
         FileChannel inputChannel = null;
         FileChannel outputChannel = null;
