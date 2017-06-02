@@ -7,7 +7,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * @author Aidan Follestad (afollestad)
@@ -278,6 +281,10 @@ public class Util {
             }
         }
         return false;
+    }
+
+    public static boolean isMap(Class<?> cls) {
+        return Stream.of(cls.getInterfaces()).filter(Map.class::equals).count() > 0;
     }
 
     public static Class<?> listGenericType(Field field) {

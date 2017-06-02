@@ -3,7 +3,7 @@ package com.blade.kit.json;
 /**
  * @author Aidan Follestad (afollestad)
  */
-class SimpleTestDataOne {
+public class SimpleTestDataOne {
 
     String hi = "hello";
 }

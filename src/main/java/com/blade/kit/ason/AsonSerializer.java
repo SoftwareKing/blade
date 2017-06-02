@@ -16,7 +16,7 @@ import static com.blade.kit.ason.Util.*;
  * @author Aidan Follestad (afollestad)
  */
 @SuppressWarnings({"unchecked", "WeakerAccess", "unused"})
-class AsonSerializer {
+public class AsonSerializer {
 
     private static AsonSerializer serializer;
     private Map<String, ClassCacheEntry> classCache;
@@ -55,6 +55,11 @@ class AsonSerializer {
         } else if (isList(object.getClass())) {
             throw new IllegalArgumentException(
                     "Use Ason.serialize(Object, Class<?>) to serialize lists.");
+        } else if (isMap(object.getClass())) {
+            final Ason ason = new Ason();
+            Map map = (Map) object;
+            map.forEach((k, v) -> ason.put(k.toString(), v));
+            return ason;
         } else {
             final Field[] fields = object.getClass().getDeclaredFields();
             final Ason ason = new Ason();
@@ -119,7 +124,7 @@ class AsonSerializer {
         return serializeArray(array);
     }
 
-    Object serializeField(final Field field, final Object object) {
+    public Object serializeField(final Field field, final Object object) {
         field.setAccessible(true);
         final Object fieldValue;
         try {

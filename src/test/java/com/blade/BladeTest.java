@@ -1,5 +1,7 @@
 package com.blade;
 
+import com.blade.kit.ason.Util;
+
 import java.util.function.Consumer;
 
 /**
@@ -9,6 +11,7 @@ import java.util.function.Consumer;
 public class BladeTest {
 
     public static void main(String[] args) {
+        System.out.println(Util.splitPath("asdadadasd"));
         Blade blade = Blade.me();
         blade.get("/", (req, res) -> {
             res.text("Hello Blade");
