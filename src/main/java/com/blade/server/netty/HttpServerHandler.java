@@ -142,15 +142,14 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     }
 
     /**
-     * Methods to perform the interceptor
+     * Methods to perform the hooks
      *
      * @param request      request object
      * @param response     response object
-     * @param interceptors execute the interceptor list
      * @return Return execute is ok
      */
     private int invokeHook(Request request, Response response, Route route) {
-        return routeViewResolve.intercept(request, response, route) ? 0 : 1;
+        return routeViewResolve.invokeHook(request, response, route) ? 0 : 1;
     }
 
 }

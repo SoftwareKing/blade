@@ -27,7 +27,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import org.omg.PortableInterceptor.Interceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,8 +166,6 @@ public class BladeServer {
             routeBuilder.addRouter(clazz);
         if (ReflectKit.hasInterface(clazz, WebHook.class))
             routeBuilder.addWebHook(clazz);
-        if (ReflectKit.hasInterface(clazz, Interceptor.class))
-            routeBuilder.addInterceptor(clazz);
         if (ReflectKit.hasInterface(clazz, BeanProcessor.class))
             beanProcessors.add((BeanProcessor) blade.ioc().getBean(clazz));
         if (ReflectKit.hasInterface(clazz, StartedEvent.class))

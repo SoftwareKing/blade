@@ -35,9 +35,7 @@ public class RouteMatcher {
 
     // Storage URL and route
     private Map<String, Route> routes = new HashMap<>();
-    private Map<String, Route> interceptors = new HashMap<>();
-
-//    private List<Route> interceptorRoutes = new ArrayList<>();
+    private Map<String, Route> hooks = new HashMap<>();
 
     private static final Pattern PATH_VARIABLE_PATTERN = Pattern.compile(":(\\w+)");
 
@@ -61,11 +59,11 @@ public class RouteMatcher {
         }
 
         if (httpMethod == HttpMethod.BEFORE || httpMethod == HttpMethod.AFTER) {
-            if (null != this.interceptors.get(key)) {
-                log.warn("\tInterceptor {} -> {} has exist", path, httpMethod.toString());
+            if (null != this.hooks.get(key)) {
+                log.warn("\tWebHook {} -> {} has exist", path, httpMethod.toString());
             }
-            this.interceptors.put(key, route);
-            log.debug("Add Interceptor => {}", route);
+            this.hooks.put(key, route);
+            log.debug("Add hook  => {}", route);
         } else {
             this.routes.put(key, route);
             log.debug("Add Route => {}", route);
@@ -92,10 +90,10 @@ public class RouteMatcher {
 
         Route route = new Route(httpMethod, path, controller, controllerType, method);
         if (httpMethod == HttpMethod.BEFORE || httpMethod == HttpMethod.AFTER) {
-            if (null != this.interceptors.get(key)) {
-                log.warn("\tInterceptor {} -> {} has exist", path, httpMethod.toString());
+            if (null != this.hooks.get(key)) {
+                log.warn("\tWebHook {} -> {} has exist", path, httpMethod.toString());
             }
-            this.interceptors.put(key, route);
+            this.hooks.put(key, route);
         } else {
             this.routes.put(key, route);
         }
@@ -233,16 +231,15 @@ public class RouteMatcher {
     }
 
     /**
-     * Find all in before of the interceptor
+     * Find all in before of the hook
      *
      * @param path request path
-     * @return return interceptor list
      */
     public List<Route> getBefore(String path) {
 
         String cleanPath = parsePath(path);
 
-        List<Route> befores = interceptors.values().stream()
+        List<Route> befores = hooks.values().stream()
                 .filter(route -> route.getHttpMethod() == HttpMethod.BEFORE && matchesPath(route.getPath(), cleanPath))
                 .collect(Collectors.toList());
 
@@ -251,15 +248,14 @@ public class RouteMatcher {
     }
 
     /**
-     * Find all in after of the interceptor
+     * Find all in after of the hooks
      *
      * @param path request path
-     * @return return interceptor list
      */
     public List<Route> getAfter(String path) {
         String cleanPath = parsePath(path);
 
-        List<Route> afters = interceptors.values().stream()
+        List<Route> afters = hooks.values().stream()
                 .filter(route -> route.getHttpMethod() == HttpMethod.AFTER && matchesPath(route.getPath(), cleanPath))
                 .collect(Collectors.toList());
 
@@ -315,10 +311,10 @@ public class RouteMatcher {
     public void register() {
 
         routes.values().forEach(route -> log.info("Add route => {}", route));
-        interceptors.values().forEach(route -> log.info("Add hook  => {}", route));
+        hooks.values().forEach(route -> log.info("Add hook  => {}", route));
 
         List<Route> routeHandlers = new ArrayList<>(routes.values());
-        routeHandlers.addAll(interceptors.values());
+        routeHandlers.addAll(hooks.values());
 
         for (Route route : routeHandlers) {
             String path = parsePath(route.getPath());

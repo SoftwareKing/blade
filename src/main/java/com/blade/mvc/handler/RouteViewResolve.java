@@ -58,7 +58,7 @@ public class RouteViewResolve {
         }
     }
 
-    public boolean intercept(Request request, Response response, Route route) throws BladeException {
+    public boolean invokeHook(Request request, Response response, Route route) throws BladeException {
         Method actionMethod = route.getAction();
         Object target = route.getTarget();
 

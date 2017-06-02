@@ -1,13 +1,9 @@
 package com.blade.mvc.route;
 
 import com.blade.kit.ReflectKit;
-import com.blade.mvc.annotation.Intercept;
 import com.blade.mvc.annotation.Path;
 import com.blade.mvc.hook.Invoker;
 import com.blade.mvc.http.HttpMethod;
-import com.blade.mvc.http.Request;
-import com.blade.mvc.http.Response;
-import com.blade.mvc.interceptor.Interceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,30 +23,6 @@ public class RouteBuilder {
 
     public RouteBuilder(RouteMatcher routeMatcher) {
         this.routeMatcher = routeMatcher;
-    }
-
-    /**
-     * Parse Interceptor
-     *
-     * @param interceptor resolve the interceptor class
-     */
-    public void addInterceptor(final Class<?> interceptor) {
-
-        boolean hasInterface = ReflectKit.hasInterface(interceptor, Interceptor.class);
-        if (null == interceptor || !hasInterface) {
-            return;
-        }
-
-        Intercept intercept = interceptor.getAnnotation(Intercept.class);
-        String partten = "/.*";
-        if (null != intercept) {
-            partten = intercept.value();
-        }
-
-        Method before = ReflectKit.getMethod(interceptor, "before", Request.class, Response.class);
-        Method after = ReflectKit.getMethod(interceptor, "after", Request.class, Response.class);
-        buildRoute(interceptor, before, partten, HttpMethod.BEFORE);
-        buildRoute(interceptor, after, partten, HttpMethod.AFTER);
     }
 
     public void addWebHook(final Class<?> webHook) {
