@@ -12,13 +12,13 @@ import java.util.List;
 /**
  * @author Aidan Follestad (afollestad)
  */
-class Util {
+public class Util {
 
-    Util() {
+    public Util() {
         throw new IllegalStateException("Util shouldn't be constructed!");
     }
 
-    static String[] splitPath(String key) {
+    public static String[] splitPath(String key) {
         List<String> result = new ArrayList<>(4);
         int start = 0;
         for (int i = 0; i < key.length(); i++) {
@@ -35,7 +35,7 @@ class Util {
         return result.toArray(new String[result.size()]);
     }
 
-    static boolean isNumber(String string) {
+    public static boolean isNumber(String string) {
         for (char c : string.toCharArray()) {
             if (!Character.isDigit(c)) {
                 return false;
@@ -44,7 +44,7 @@ class Util {
         return true;
     }
 
-    static Object followPath(
+    public static Object followPath(
             JSONObject wrapper, String key, String[] splitKey, boolean createMissing) {
         // Get value for the first path key
         Object parent = wrapper.opt(splitKey[0]);
@@ -126,7 +126,7 @@ class Util {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> T getPathValue(JSONObject wrapper, String key, String[] splitKey) {
+    public static <T> T getPathValue(JSONObject wrapper, String key, String[] splitKey) {
         if (splitKey.length == 1) {
             return (T) wrapper.opt(key);
         }
@@ -149,7 +149,7 @@ class Util {
         }
     }
 
-    static Constructor<?> getDefaultConstructor(Class<?> cls) {
+    public static Constructor<?> getDefaultConstructor(Class<?> cls) {
         final Constructor[] constructorArray = cls.getDeclaredConstructors();
         Constructor constructor = null;
         for (Constructor ct : constructorArray) {
@@ -168,7 +168,7 @@ class Util {
         return constructor;
     }
 
-    static boolean isPrimitive(Class<?> cls) {
+    public static boolean isPrimitive(Class<?> cls) {
         return cls == boolean.class
                 || cls == Boolean.class
                 || cls == double.class
@@ -188,7 +188,7 @@ class Util {
                 || cls == Character.class;
     }
 
-    static boolean isPrimitive(Object cls) {
+    public static boolean isPrimitive(Object cls) {
         return cls instanceof Boolean
                 || cls instanceof Double
                 || cls instanceof Float
@@ -200,7 +200,7 @@ class Util {
                 || cls instanceof Character;
     }
 
-    static Object defaultPrimitiveValue(Class<?> primitiveCls) {
+    public static Object defaultPrimitiveValue(Class<?> primitiveCls) {
         if (primitiveCls == boolean.class) {
             return false;
         } else if (primitiveCls == double.class) {
@@ -222,7 +222,7 @@ class Util {
         }
     }
 
-    static boolean isList(Class<?> cls) {
+    public static boolean isList(Class<?> cls) {
         if (cls == null) {
             return false;
         }
@@ -238,13 +238,13 @@ class Util {
         return false;
     }
 
-    static boolean shouldIgnore(Field field) {
+    public static boolean shouldIgnore(Field field) {
         return field.getName().startsWith("this$")
                 || field.getName().equals("$jacocoData") // used with Jacoco testing
                 || field.getAnnotation(AsonIgnore.class) != null;
     }
 
-    static String fieldName(Field field) {
+    public static String fieldName(Field field) {
         AsonName annotation = field.getAnnotation(AsonName.class);
         if (annotation != null) {
             return annotation.name();
@@ -252,7 +252,7 @@ class Util {
         return field.getName();
     }
 
-    static void setFieldValue(Field field, Object object, Object value) {
+    public static void setFieldValue(Field field, Object object, Object value) {
         if (field == null || value == null) {
             return;
         }
@@ -265,7 +265,7 @@ class Util {
         }
     }
 
-    static boolean isJsonArray(String json) {
+    public static boolean isJsonArray(String json) {
         if (json == null) {
             return false;
         }
@@ -280,12 +280,12 @@ class Util {
         return false;
     }
 
-    static Class<?> listGenericType(Field field) {
+    public static Class<?> listGenericType(Field field) {
         ParameterizedType stringListType = (ParameterizedType) field.getGenericType();
         return (Class<?>) stringListType.getActualTypeArguments()[0];
     }
 
-    static boolean isNull(Object value) {
+    public static boolean isNull(Object value) {
         return value == null || JSONObject.NULL.equals(value) || JSONObject.NULL == value;
     }
 }

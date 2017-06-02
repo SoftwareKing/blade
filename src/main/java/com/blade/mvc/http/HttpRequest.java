@@ -1,7 +1,7 @@
 package com.blade.mvc.http;
 
-import com.blade.kit.BladeKit;
 import com.blade.kit.PathKit;
+import com.blade.kit.WebKit;
 import com.blade.mvc.multipart.FileItem;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -238,7 +238,7 @@ public class HttpRequest implements Request {
 
     @Override
     public String address() {
-        return BladeKit.ipAddr(this);
+        return WebKit.ipAddr(this);
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.blade.mvc.http;
 
-import com.blade.kit.ason.Ason;
+import com.blade.kit.JsonKit;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.template.TemplateEngine;
@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * @author biezhi
@@ -34,15 +33,16 @@ public class HttpResponse implements Response {
 
     private ChannelHandlerContext ctx;
     private FullHttpResponse response;
-    private int statusCode = 200;
+
 
     private String contentType = "text/html; charset=UTF-8";
     private HttpVersion httpVersion = HttpVersion.HTTP_1_1;
     private HttpResponseStatus status = HttpResponseStatus.OK;
     private Object content = Unpooled.EMPTY_BUFFER;
     private HttpHeaders headers = new DefaultHttpHeaders();
-    private Set<Cookie> cookies = new HashSet<Cookie>();
+    private Set<Cookie> cookies = new HashSet<>();
 
+    private int statusCode = 200;
     private boolean isCommit;
 
     private TemplateEngine templateEngine;
@@ -137,21 +137,21 @@ public class HttpResponse implements Response {
 
     @Override
     public void text(String text) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(text, CharsetUtil.UTF_8));
+        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(text, CharsetUtil.UTF_8));
         response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
         this.send(response);
     }
 
     @Override
     public void html(String html) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(html, CharsetUtil.UTF_8));
+        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(html, CharsetUtil.UTF_8));
         response.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
         this.send(response);
     }
 
     @Override
     public void json(String json) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(json, CharsetUtil.UTF_8));
+        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(json, CharsetUtil.UTF_8));
         String userAgent = WebContext.request().userAgent();
         if (userAgent.contains("MSIE")) {
             response.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
@@ -163,7 +163,7 @@ public class HttpResponse implements Response {
 
     @Override
     public void json(Object bean) {
-        this.json(Ason.serialize(bean).toString());
+        this.json(JsonKit.toString(bean));
     }
 
     @Override
@@ -177,7 +177,7 @@ public class HttpResponse implements Response {
         Writer writer = new PrintWriter(new ByteBufOutputStream(buffer));
         try {
             templateEngine.render(modelAndView, writer);
-            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(statusCode), buffer);
+            FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), buffer);
             response.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
             this.send(response);
         } catch (Exception e) {

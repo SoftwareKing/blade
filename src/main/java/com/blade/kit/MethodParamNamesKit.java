@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * @author wendal(wendal1985@gmail.com)
  */
-public class MethodParamNamesScaner {
+public class MethodParamNamesKit {
 
     /**
      * 获取Method的形参名称列表

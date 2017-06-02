@@ -164,7 +164,7 @@ public class JSONObject {
      * Construct an empty JSONObject.
      */
     public JSONObject() {
-        this.map = new HashMap<String, Object>();
+        this.map = new HashMap<>();
     }
 
     /**
@@ -212,16 +212,14 @@ public class JSONObject {
                     key = x.nextValue().toString();
             }
 
-// The key is followed by ':'.
-
+            // The key is followed by ':'.
             c = x.nextClean();
             if (c != ':') {
                 throw x.syntaxError("Expected a ':' after a key");
             }
             this.putOnce(key, x.nextValue());
 
-// Pairs are separated by ','.
-
+            // Pairs are separated by ','.
             switch (x.nextClean()) {
                 case ';':
                 case ',':
@@ -245,7 +243,7 @@ public class JSONObject {
      *          the JSONObject.
      */
     public JSONObject(Map<?, ?> m) {
-        this.map = new HashMap<String, Object>();
+        this.map = new HashMap<>();
         if (m != null) {
             for (final Entry<?, ?> e : m.entrySet()) {
                 final Object value = e.getValue();
@@ -331,17 +329,15 @@ public class JSONObject {
         ResourceBundle bundle = ResourceBundle.getBundle(baseName, locale,
                 Thread.currentThread().getContextClassLoader());
 
-// Iterate through the keys in the bundle.
-
+        // Iterate through the keys in the bundle.
         Enumeration<String> keys = bundle.getKeys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
             if (key != null) {
 
-// Go through the path, ensuring that there is a nested JSONObject for each
-// segment except the last. Add the value using the last segment's name into
-// the deepest nested JSONObject.
-
+                // Go through the path, ensuring that there is a nested JSONObject for each
+                // segment except the last. Add the value using the last segment's name into
+                // the deepest nested JSONObject.
                 String[] path = ((String) key).split("\\.");
                 int last = path.length - 1;
                 JSONObject target = this;
@@ -428,8 +424,7 @@ public class JSONObject {
             return "null";
         }
 
-// Shave off trailing zeros and decimal point, if possible.
-
+        // Shave off trailing zeros and decimal point, if possible.
         String string = Double.toString(d);
         if (string.indexOf('.') > 0 && string.indexOf('e') < 0
                 && string.indexOf('E') < 0) {

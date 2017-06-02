@@ -1,6 +1,5 @@
 package com.blade.kit.ason;
 
-
 import com.blade.kit.json.JSONArray;
 import com.blade.kit.json.JSONException;
 import com.blade.kit.json.JSONObject;

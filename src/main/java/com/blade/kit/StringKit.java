@@ -1,5 +1,7 @@
 package com.blade.kit;
 
+import java.util.Random;
+
 /**
  * @author biezhi
  *         2017/6/1
@@ -10,6 +12,11 @@ public final class StringKit {
 
     }
 
+    private static final Random random = new Random();
+
+    public static int rand(int min, int max) {
+        return random.nextInt(max) % (max - min + 1) + min;
+    }
 
     public static boolean isNotBlank(String str) {
         return null != str && !"".equals(str.trim());

@@ -113,7 +113,7 @@ public class BladeServer {
 
         List<BeanDefine> beanDefines = ioc.getBeanDefines();
         if (BladeKit.isNotEmpty(beanDefines)) {
-            beanDefines.forEach(b -> ReflectKit.injection(ioc, b));
+            beanDefines.forEach(b -> BladeKit.injection(ioc, b));
         }
     }
 

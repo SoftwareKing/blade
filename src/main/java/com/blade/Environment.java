@@ -1,6 +1,6 @@
 package com.blade;
 
-import com.blade.kit.BladeKit;
+import com.blade.kit.IOKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,7 +108,7 @@ public class Environment {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         } finally {
-            BladeKit.closeQuietly(is);
+            IOKit.closeQuietly(is);
         }
     }
 

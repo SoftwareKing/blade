@@ -162,7 +162,7 @@ public class EncrypKit {
             e.printStackTrace();
             return null;
         } finally {
-            BladeKit.closeQuietly(fis);
+            IOKit.closeQuietly(fis);
         }
     }
 

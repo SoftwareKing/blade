@@ -32,45 +32,6 @@ public class ReflectKit {
         }
     }
 
-    /**
-     * Get @Inject Annotated field
-     *
-     * @param ioc         ioc container
-     * @param classDefine classDefine
-     * @return return FieldInjector
-     */
-    public static List<FieldInjector> getInjectFields(Ioc ioc, ClassDefine classDefine) {
-        List<FieldInjector> injectors = new ArrayList<>(8);
-        for (Field field : classDefine.getDeclaredFields()) {
-            if (null != field.getAnnotation(InjectWith.class) || null != field.getAnnotation(Inject.class)) {
-                injectors.add(new FieldInjector(ioc, field));
-            }
-        }
-        if (injectors.size() == 0) {
-            return EMPTY_LIST;
-        }
-        return injectors;
-    }
-
-    public static void injection(Ioc ioc, Class<?> type) {
-        BeanDefine beanDefine = ioc.getBeanDefine(type);
-        ClassDefine classDefine = ClassDefine.create(type);
-        List<FieldInjector> fieldInjectors = getInjectFields(ioc, classDefine);
-        Object bean = beanDefine.getBean();
-        for (FieldInjector fieldInjector : fieldInjectors) {
-            fieldInjector.injection(bean);
-        }
-    }
-
-    public static void injection(Ioc ioc, BeanDefine beanDefine) {
-        ClassDefine classDefine = ClassDefine.create(beanDefine.getType());
-        List<FieldInjector> fieldInjectors = getInjectFields(ioc, classDefine);
-        Object bean = beanDefine.getBean();
-        for (FieldInjector fieldInjector : fieldInjectors) {
-            fieldInjector.injection(bean);
-        }
-    }
-
     private static final List<Class> primitiveTypes = Arrays.asList(int.class, Integer.class, long.class, Long.class,
             boolean.class, Boolean.class, float.class, Float.class, double.class, Double.class, byte.class, Byte.class, short.class, Short.class,
             String.class);

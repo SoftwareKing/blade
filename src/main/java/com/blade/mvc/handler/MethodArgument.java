@@ -1,7 +1,7 @@
 package com.blade.mvc.handler;
 
 import com.blade.BladeException;
-import com.blade.kit.MethodParamNamesScaner;
+import com.blade.kit.MethodParamNamesKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
 import com.blade.mvc.annotation.*;
@@ -26,7 +26,7 @@ public final class MethodArgument {
 
         Parameter[] parameters = actionMethod.getParameters();
         Object[] args = new Object[parameters.length];
-        String[] paramaterNames = MethodParamNamesScaner.getParamNames(actionMethod).toArray(new String[MethodParamNamesScaner.getParamNames(actionMethod).size()]);// AsmKit.getMethodParamNames(actionMethod);
+        String[] paramaterNames = MethodParamNamesKit.getParamNames(actionMethod).toArray(new String[MethodParamNamesKit.getParamNames(actionMethod).size()]);// AsmKit.getMethodParamNames(actionMethod);
 
         for (int i = 0, len = parameters.length; i < len; i++) {
             Parameter parameter = parameters[i];

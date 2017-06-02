@@ -2,6 +2,7 @@ package com.blade.mvc.ui.template;
 
 import com.blade.BladeException;
 import com.blade.kit.BladeKit;
+import com.blade.kit.IOKit;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.server.netty.BladeServer;
 import org.slf4j.Logger;
@@ -23,12 +24,12 @@ public class DefaultEngine implements TemplateEngine {
         String view = modelAndView.getView();
         String viewPath = BladeServer.CLASSPATH + "templates" + File.separator + view;
         try {
-            String body = BladeKit.readToString(viewPath);
+            String body = IOKit.readToString(viewPath);
             writer.write(body);
         } catch (Exception e) {
             throw new BladeException(e.getMessage());
         } finally {
-            BladeKit.closeQuietly(writer);
+            IOKit.closeQuietly(writer);
         }
     }
 }
