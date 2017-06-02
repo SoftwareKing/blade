@@ -1,9 +1,12 @@
 package com.blade.kit;
 
-import com.blade.ioc.*;
+import com.blade.ioc.BeanDefine;
+import com.blade.ioc.ClassDefine;
+import com.blade.ioc.FieldInjector;
+import com.blade.ioc.Ioc;
+import com.blade.ioc.annotation.Inject;
 import com.blade.ioc.annotation.InjectWith;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,11 +42,8 @@ public class ReflectKit {
     public static List<FieldInjector> getInjectFields(Ioc ioc, ClassDefine classDefine) {
         List<FieldInjector> injectors = new ArrayList<>(8);
         for (Field field : classDefine.getDeclaredFields()) {
-            for (Annotation annotation : field.getAnnotations()) {
-                InjectWith with = annotation.annotationType().getAnnotation(InjectWith.class);
-                if (with != null) {
-                    injectors.add(new FieldInjector(ioc, field));
-                }
+            if (null != field.getAnnotation(InjectWith.class) || null != field.getAnnotation(Inject.class)) {
+                injectors.add(new FieldInjector(ioc, field));
             }
         }
         if (injectors.size() == 0) {

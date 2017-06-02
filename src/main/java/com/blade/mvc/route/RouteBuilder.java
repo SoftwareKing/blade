@@ -96,7 +96,7 @@ public class RouteBuilder {
      * @param method     route httpmethod
      */
     private void buildRoute(Class<?> clazz, Method execMethod, String path, HttpMethod method) {
-        routeMatcher.addRoute(method, path, ReflectKit.newInstance(clazz), clazz, execMethod);
+        routeMatcher.addRoute(method, path, null, clazz, execMethod);
     }
 
 }

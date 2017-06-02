@@ -12,6 +12,10 @@ public class BladeException extends RuntimeException {
     public BladeException() {
     }
 
+    public BladeException(Throwable t) {
+        super(t);
+    }
+
     public BladeException(String msg) {
         this.msg = msg;
     }

@@ -162,8 +162,12 @@ public class BladeServer {
     private void parseCls(Class<?> clazz) {
         if (null != clazz.getAnnotation(Bean.class))
             blade.register(clazz);
-        if (null != clazz.getAnnotation(Path.class))
+        if (null != clazz.getAnnotation(Path.class)) {
+            if (null == clazz.getAnnotation(Bean.class)) {
+                blade.register(clazz);
+            }
             routeBuilder.addRouter(clazz);
+        }
         if (ReflectKit.hasInterface(clazz, WebHook.class))
             routeBuilder.addWebHook(clazz);
         if (ReflectKit.hasInterface(clazz, BeanProcessor.class))

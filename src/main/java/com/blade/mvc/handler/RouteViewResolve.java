@@ -54,7 +54,7 @@ public class RouteViewResolve {
                 }
             }
         } catch (Exception e) {
-            throw new BladeException(e.getMessage());
+            throw new BladeException(e);
         }
     }
 
