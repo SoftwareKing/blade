@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.blade.kit.ason.Ason;
+import com.blade.kit.ason.AsonArray;
 import org.junit.Test;
 
 public class AsonPrimitivesTest {
@@ -125,8 +127,8 @@ public class AsonPrimitivesTest {
     public void put_deep_test() {
         Ason inside = new Ason().put("id", 2);
         Ason ason = new Ason().put("id", 1).put("inside", inside).put("inside.test", "Hello, world!");
-        assertEquals(1, ason.get("id"));
-        assertEquals(2, ason.get("inside.id"));
+        assertEquals(1, ason.getInt("id"));
+        assertEquals(2, ason.getInt("inside.id"));
         assertEquals("Hello, world!", ason.get("inside.test"));
     }
 
@@ -145,7 +147,7 @@ public class AsonPrimitivesTest {
     @Test
     public void get_short_test() {
         Ason ason = new Ason().put("test", (short) 22);
-        assertEquals((short) 22, ason.get("test"));
+        assertEquals((short) 22, ason.getInt("test"));
         assertEquals((short) 22, ason.getShort("test"));
         assertEquals((short) 69, ason.getShort("test2", (short) 69));
     }
@@ -153,7 +155,7 @@ public class AsonPrimitivesTest {
     @Test
     public void get_int_test() {
         Ason ason = new Ason().put("test", 1995);
-        assertEquals(1995, ason.get("test"));
+        assertEquals(1995, ason.getInt("test"));
         assertEquals(1995, ason.getInt("test"));
         assertEquals(1996, ason.getInt("test2", 1996));
     }
@@ -161,7 +163,7 @@ public class AsonPrimitivesTest {
     @Test
     public void get_long_test() {
         Ason ason = new Ason().put("test", 1995L);
-        assertEquals(1995L, ason.get("test"));
+        assertEquals(1995L, ason.getInt("test"));
         assertEquals(1995L, ason.getLong("test"));
         assertEquals(1996L, ason.getLong("test2", 1996L));
     }
@@ -176,7 +178,7 @@ public class AsonPrimitivesTest {
     @Test
     public void get_double_test() {
         Ason ason = new Ason().put("test", 1995.2d);
-        assertEquals(1995.2d, ason.get("test"));
+        assertEquals(1995.2d, ason.getInt("test"));
         assertEquals(1995.2d, ason.getDouble("test"), 0d);
         assertEquals(1996.9d, ason.getDouble("test2", 1996.9d), 0d);
     }
