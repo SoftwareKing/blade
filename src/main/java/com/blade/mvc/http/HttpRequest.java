@@ -1,5 +1,6 @@
 package com.blade.mvc.http;
 
+import com.blade.BladeException;
 import com.blade.kit.PathKit;
 import com.blade.kit.WebKit;
 import com.blade.mvc.multipart.FileItem;
@@ -8,10 +9,7 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
-import io.netty.handler.codec.http.multipart.Attribute;
-import io.netty.handler.codec.http.multipart.FileUpload;
-import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
-import io.netty.handler.codec.http.multipart.InterfaceHttpData;
+import io.netty.handler.codec.http.multipart.*;
 import io.netty.util.CharsetUtil;
 
 import java.io.IOException;
@@ -23,7 +21,9 @@ import java.util.*;
  */
 public class HttpRequest implements Request {
 
-    private byte[] body;
+    private static final HttpDataFactory HTTP_DATA_FACTORY = new DefaultHttpDataFactory(true);
+
+    private ByteBuf body;
 
     private String contextPath;
 
@@ -45,17 +45,15 @@ public class HttpRequest implements Request {
         // 初始化header信息
         fullHttpRequest.headers().forEach((header) -> headers.put(header.getKey(), header.getValue()));
         // 初始化body
-        ByteBuf buf = fullHttpRequest.content();
-        this.body = new byte[buf.readableBytes()];
-        buf.readBytes(this.body);
+        this.body = fullHttpRequest.content().copy();
         // 初始化请求参数
-        if (fullHttpRequest.method().equals(io.netty.handler.codec.http.HttpMethod.GET)) {
-            this.parameters = new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).parameters();
-        }
-        if (fullHttpRequest.method().equals(io.netty.handler.codec.http.HttpMethod.POST)) {
-            HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(fullHttpRequest);
+        this.parameters.putAll(new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).parameters());
+        if (!fullHttpRequest.method().name().equals("GET")) {
+            // 是POST请求
+            HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(HTTP_DATA_FACTORY, fullHttpRequest);
             decoder.getBodyHttpDatas().stream().forEach(this::parseData);
         }
+
         // 初始化cookie
         header("cookie").ifPresent(header -> {
             ServerCookieDecoder.LAX.decode(header).forEach(this::parseCookie);
@@ -67,6 +65,7 @@ public class HttpRequest implements Request {
             switch (data.getHttpDataType()) {
                 case Attribute:
                     Attribute attribute = (Attribute) data;
+                    String name = attribute.getName();
                     String value = attribute.getValue();
                     this.parameters.put(data.getName(), Arrays.asList(value));
                     break;
@@ -78,9 +77,11 @@ public class HttpRequest implements Request {
                         fileItems.put(fileUpload.getName(), fileItem);
                     }
                     break;
+                default:
+                    break;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new BladeException(e);
         } finally {
             data.release();
         }
@@ -338,13 +339,13 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public byte[] body() {
+    public ByteBuf body() {
         return this.body;
     }
 
     @Override
     public String bodyToString() {
-        return new String(body, CharsetUtil.UTF_8);
+        return this.body.toString(CharsetUtil.UTF_8);
     }
 
 }

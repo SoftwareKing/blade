@@ -1,6 +1,7 @@
 package com.blade.mvc.http;
 
 import com.blade.mvc.multipart.FileItem;
+import io.netty.buffer.ByteBuf;
 
 import java.util.List;
 import java.util.Map;
@@ -272,7 +273,7 @@ public interface Request {
     /**
      * @return Return request body
      */
-    byte[] body();
+    ByteBuf body();
 
     String bodyToString();
 

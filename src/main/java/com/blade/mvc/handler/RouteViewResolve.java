@@ -41,8 +41,8 @@ public class RouteViewResolve {
             if (null != returnParam) {
                 Class<?> returnType = returnParam.getClass();
                 Path path = target.getClass().getAnnotation(Path.class);
-                JSON json = actionMethod.getAnnotation(JSON.class);
-                if ((null != path && path.restful()) || null != json) {
+                JSON JSON = actionMethod.getAnnotation(JSON.class);
+                if ((null != path && path.restful()) || null != JSON) {
                     response.json(returnParam);
                 } else {
                     if (returnType == String.class) {

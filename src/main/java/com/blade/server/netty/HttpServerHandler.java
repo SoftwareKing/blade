@@ -32,8 +32,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
@@ -66,6 +68,11 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) throws Exception {
+
+        if (is100ContinueExpected(fullHttpRequest)) {
+            ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+        }
+
         Request request = new HttpRequest(fullHttpRequest);
         Response response = new HttpResponse(ctx, templateEngine);
         response.header("Server", "blade/" + Blade.VER);

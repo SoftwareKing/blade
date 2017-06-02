@@ -1,6 +1,7 @@
 package com.blade.mvc.handler;
 
 import com.blade.BladeException;
+import com.blade.kit.JsonKit;
 import com.blade.kit.MethodParamNamesKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
@@ -15,28 +16,32 @@ import com.blade.mvc.ui.ModelAndView;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public final class MethodArgument {
 
     public static Object[] getArgs(Request request, Response response, Method actionMethod) throws Exception {
-
         actionMethod.setAccessible(true);
-
         Parameter[] parameters = actionMethod.getParameters();
         Object[] args = new Object[parameters.length];
-        String[] paramaterNames = MethodParamNamesKit.getParamNames(actionMethod).toArray(new String[MethodParamNamesKit.getParamNames(actionMethod).size()]);// AsmKit.getMethodParamNames(actionMethod);
+        List<String> paramaterNames = MethodParamNamesKit.getParamNames(actionMethod);
 
         for (int i = 0, len = parameters.length; i < len; i++) {
             Parameter parameter = parameters[i];
-            String paramName = paramaterNames[i];
+            String paramName = paramaterNames.get(i);
             int annoLen = parameter.getAnnotations().length;
             Class<?> argType = parameter.getType();
             if (annoLen > 0) {
                 QueryParam queryParam = parameter.getAnnotation(QueryParam.class);
                 if (null != queryParam) {
                     args[i] = getQueryParam(argType, queryParam, paramName, request);
+                }
+                BodyParam bodyParam = parameter.getAnnotation(BodyParam.class);
+                if (null != bodyParam) {
+                    args[i] = getBodyParam(argType, request);
                 }
                 PathParam pathParam = parameter.getAnnotation(PathParam.class);
                 if (null != pathParam) {
@@ -57,7 +62,7 @@ public final class MethodArgument {
                 MultipartParam multipartParam = parameter.getAnnotation(MultipartParam.class);
                 if (null != multipartParam && argType == FileItem.class) {
                     String name = StringKit.isBlank(multipartParam.value()) ? paramName : multipartParam.value();
-                    args[i] = request.fileItem(name);
+                    args[i] = request.fileItem(name).orElse(null);
                 }
             } else {
                 if (ReflectKit.isPrimitive(argType)) {
@@ -73,6 +78,8 @@ public final class MethodArgument {
                         args[i] = response;
                     } else if (argType == Session.class) {
                         args[i] = request.session();
+                    } else if (argType == FileItem.class) {
+                        args[i] = new ArrayList<>(request.fileItems().values()).get(0);
                     } else if (argType == ModelAndView.class) {
                         args[i] = new ModelAndView();
                     } else if (argType == Map.class) {
@@ -84,6 +91,15 @@ public final class MethodArgument {
             }
         }
         return args;
+    }
+
+    private static Object getBodyParam(Class<?> argType, Request request) throws BladeException {
+        if (ReflectKit.isPrimitive(argType)) {
+            return ReflectKit.convert(argType, request.bodyToString());
+        } else {
+            String json = request.bodyToString();
+            return StringKit.isNotBlank(json) ? JsonKit.formJson(request.bodyToString(), argType) : null;
+        }
     }
 
     private static Object getQueryParam(Class<?> argType, QueryParam queryParam, String paramName, Request request) throws BladeException {
@@ -146,6 +162,7 @@ public final class MethodArgument {
                 return null;
             }
             Object obj = ReflectKit.newInstance(argType);
+            boolean hasField = false;
             for (Field field : fields) {
                 field.setAccessible(true);
                 if (field.getName().equals("serialVersionUID")) {
@@ -159,11 +176,12 @@ public final class MethodArgument {
                 if (fieldValue.isPresent()) {
                     Object value = ReflectKit.convert(field.getType(), fieldValue.get());
                     field.set(obj, value);
+                    hasField = true;
                 }
             }
-            return obj;
-        } catch (NumberFormatException | IllegalAccessException | SecurityException e) {
-            throw new BladeException(e.getMessage());
+            return hasField ? obj : null;
+        } catch (Exception e) {
+            throw new BladeException(e);
         }
     }
 

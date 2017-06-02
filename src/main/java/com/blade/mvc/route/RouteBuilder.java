@@ -1,13 +1,14 @@
 package com.blade.mvc.route;
 
 import com.blade.kit.ReflectKit;
-import com.blade.mvc.annotation.Path;
+import com.blade.mvc.annotation.*;
 import com.blade.mvc.hook.Invoker;
 import com.blade.mvc.http.HttpMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
+import java.util.stream.Stream;
 
 /**
  * Route builder
@@ -60,6 +61,7 @@ public class RouteBuilder {
             LOGGER.warn("Route [{}] not controller annotation", router.getName());
             return;
         }
+
         for (Method method : methods) {
             com.blade.mvc.annotation.Route mapping = method.getAnnotation(com.blade.mvc.annotation.Route.class);
             //route method
@@ -73,8 +75,66 @@ public class RouteBuilder {
                         this.buildRoute(router, controller, method, pathV, methodType);
                     }
                 }
+                continue;
             }
+
+            GetRoute getRoute = method.getAnnotation(GetRoute.class);
+            //route method
+            if (null != getRoute) {
+                // build multiple route
+                String[] paths = getRoute.values();
+                if (paths.length > 0) {
+                    for (String path : paths) {
+                        String pathV = getRoutePath(path, nameSpace, suffix);
+                        this.buildRoute(router, controller, method, pathV, HttpMethod.GET);
+                    }
+                }
+            }
+
+            PostRoute postRoute = method.getAnnotation(PostRoute.class);
+            //route method
+            if (null != postRoute) {
+                // build multiple route
+                String[] paths = postRoute.values();
+                if (paths.length > 0) {
+                    for (String path : paths) {
+                        String pathV = getRoutePath(path, nameSpace, suffix);
+                        this.buildRoute(router, controller, method, pathV, HttpMethod.POST);
+                    }
+                }
+            }
+
+            PutRoute putRoute = method.getAnnotation(PutRoute.class);
+            //route method
+            if (null != putRoute) {
+                // build multiple route
+                String[] paths = putRoute.values();
+                if (paths.length > 0) {
+                    for (String path : paths) {
+                        String pathV = getRoutePath(path, nameSpace, suffix);
+                        this.buildRoute(router, controller, method, pathV, HttpMethod.PUT);
+                    }
+                }
+            }
+
+            DeleteRoute deleteRoute = method.getAnnotation(DeleteRoute.class);
+            //route method
+            if (null != deleteRoute) {
+                // build multiple route
+                String[] paths = deleteRoute.values();
+                if (paths.length > 0) {
+                    for (String path : paths) {
+                        String pathV = getRoutePath(path, nameSpace, suffix);
+                        this.buildRoute(router, controller, method, pathV, HttpMethod.DELETE);
+                    }
+                }
+            }
+
         }
+    }
+
+    private void parseRoute(Method method) {
+
     }
 
     private String getRoutePath(String value, String nameSpace, String suffix) {
