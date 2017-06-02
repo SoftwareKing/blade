@@ -28,15 +28,15 @@ public class RouteBuilder {
 
     public void addWebHook(final Class<?> webHook, Object hook) {
         Path path = webHook.getAnnotation(Path.class);
-        String partten = "/.*";
+        String pattern = "/.*";
         if (null != path) {
-            partten = path.value();
+            pattern = path.value();
         }
 
         Method before = ReflectKit.getMethod(webHook, "before", Invoker.class);
         Method after = ReflectKit.getMethod(webHook, "after", Invoker.class);
-        buildRoute(webHook, hook, before, partten, HttpMethod.BEFORE);
-        buildRoute(webHook, hook, after, partten, HttpMethod.AFTER);
+        buildRoute(webHook, hook, before, pattern, HttpMethod.BEFORE);
+        buildRoute(webHook, hook, after, pattern, HttpMethod.AFTER);
     }
 
     /**

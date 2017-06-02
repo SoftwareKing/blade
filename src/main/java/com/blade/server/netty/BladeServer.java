@@ -19,6 +19,7 @@ import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.route.RouteBuilder;
 import com.blade.mvc.route.RouteMatcher;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -115,6 +116,22 @@ public class BladeServer {
         if (BladeKit.isNotEmpty(beanDefines)) {
             beanDefines.forEach(b -> BladeKit.injection(ioc, b));
         }
+    }
+
+    private void settingServer(ServerBootstrap bootstrap) {
+        bootstrap.option(ChannelOption.TCP_NODELAY, true);
+        bootstrap.option(ChannelOption.SO_REUSEADDR, true);
+        bootstrap.option(ChannelOption.SO_LINGER, 0);
+        bootstrap.childOption(ChannelOption.TCP_NODELAY, true);
+        bootstrap.childOption(ChannelOption.SO_REUSEADDR, true);
+        bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
+        bootstrap.childOption(ChannelOption.SO_LINGER, 0);
+        bootstrap.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10_000);
+        bootstrap.childOption(ChannelOption.SO_RCVBUF, 1048576);
+        bootstrap.childOption(ChannelOption.SO_SNDBUF, 1048576);
+        bootstrap.childOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 10 * 65536);
+        bootstrap.childOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 2 * 65536);
+        bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     }
 
     private void startServer(long startTime) throws Exception {

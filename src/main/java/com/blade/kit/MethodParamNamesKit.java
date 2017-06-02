@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 通过读取Class文件,获得方法形参名称列表
@@ -17,6 +18,8 @@ import java.util.Map;
  * @author wendal(wendal1985@gmail.com)
  */
 public class MethodParamNamesKit {
+
+    private static final Map<Method, List<String>> pool = new ConcurrentHashMap<>();
 
     /**
      * 获取Method的形参名称列表
@@ -26,12 +29,16 @@ public class MethodParamNamesKit {
      */
     public static List<String> getParamNames(Method method) {
         try {
+            if (pool.containsKey(method)) {
+                return pool.get(method);
+            }
             int size = method.getParameterTypes().length;
             if (size == 0)
                 return new ArrayList<>(0);
             List<String> list = getParamNames(method.getDeclaringClass()).get(getKey(method));
             if (list != null && list.size() != size)
                 return list.subList(0, size);
+            pool.put(method, list);
             return list;
         } catch (Throwable e) {
             throw new RuntimeException(e);

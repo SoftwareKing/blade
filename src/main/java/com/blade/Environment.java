@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -141,20 +142,40 @@ public class Environment {
         return this;
     }
 
-    public String get(String key) {
-        return props.getProperty(key);
+    public Optional<String> get(String key) {
+        return Optional.ofNullable(props.getProperty(key));
     }
 
     public String get(String key, String defaultValue) {
         return props.getProperty(key, defaultValue);
     }
 
-    public Integer getInt(String key) {
-        return Integer.valueOf(get(key));
+    public Optional<Integer> getInt(String key) {
+        if (get(key).isPresent()) {
+            return Optional.of(Integer.valueOf(get(key).get()));
+        }
+        return Optional.empty();
     }
 
-    public Long getLong(String key) {
-        return Long.valueOf(get(key));
+    public Integer getInt(String key, int defaultValue) {
+        if (getInt(key).isPresent()) {
+            return getInt(key).get();
+        }
+        return defaultValue;
+    }
+
+    public Optional<Long> getLong(String key) {
+        if (get(key).isPresent()) {
+            return Optional.of(Long.valueOf(get(key).get()));
+        }
+        return Optional.empty();
+    }
+
+    public Long getLong(String key, long defaultValue) {
+        if (getLong(key).isPresent()) {
+            return getLong(key).get();
+        }
+        return defaultValue;
     }
 
     public Map<String, String> toMap() {

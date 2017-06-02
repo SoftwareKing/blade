@@ -18,13 +18,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 
 /**
  * @author biezhi
@@ -197,18 +196,28 @@ public class HttpResponse implements Response {
     }
 
     private void send(FullHttpResponse response) {
-        response.headers().set(CONTENT_TYPE, this.contentType);
-        response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
+        headers.set("Date", gmtDate());
+        headers.set("Content-Type", this.contentType);
+        headers.setInt("Content-Length", response.content().readableBytes());
+
         HttpHeaders httpHeaders = response.headers().add(this.headers);
         this.cookies.forEach(cookie -> httpHeaders.add(SET_COOKIE.toString(), ServerCookieEncoder.LAX.encode(cookie)));
         boolean keepAlive = WebContext.request().keepAlive();
         if (!keepAlive) {
             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         } else {
-            response.headers().set(CONNECTION, KEEP_ALIVE);
+            response.headers().set("Connection", KEEP_ALIVE);
             ctx.writeAndFlush(response);
         }
         isCommit = true;
+    }
+
+
+    public static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
+
+    public String gmtDate() {
+        ZonedDateTime utc = ZonedDateTime.now(ZoneId.of("GMT"));
+        return DateTimeFormatter.ofPattern(HTTP_DATE_FORMAT, Locale.US).format(utc);
     }
 
     @Override

@@ -133,7 +133,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         log.error("", cause);
         if (ctx.channel().isActive()) {
-            sendError(ctx, INTERNAL_SERVER_ERROR);
+            sendError(ctx, INTERNAL_SERVER_ERROR, cause.getMessage());
         }
     }
 

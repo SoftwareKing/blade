@@ -23,8 +23,8 @@ public final class DateKit {
      *
      * @return
      */
-    public static long nowUnix() {
-        return Instant.now().getEpochSecond();
+    public static int nowUnix() {
+        return (int) Instant.now().getEpochSecond();
     }
 
     /**
@@ -53,11 +53,11 @@ public final class DateKit {
      * format string time to unix time
      *
      * @param time
-     * @param partten
+     * @param pattern
      * @return
      */
-    public static int toUnix(String time, String partten) {
-        LocalDateTime formatted = LocalDateTime.parse(time, DateTimeFormatter.ofPattern(partten));
+    public static int toUnix(String time, String pattern) {
+        LocalDateTime formatted = LocalDateTime.parse(time, DateTimeFormatter.ofPattern(pattern));
         return (int) formatted.atZone(ZoneId.systemDefault()).toInstant().getEpochSecond();
 
     }
@@ -70,6 +70,15 @@ public final class DateKit {
      */
     public static int toUnix(String time) {
         return toUnix(time, "yyyy-MM-dd HH:mm:ss");
+    }
+
+    public static int toUnix(Date date) {
+        return (int) date.toInstant().getEpochSecond();
+    }
+
+    public static Date toDate(String time, String pattern) {
+        LocalDateTime formatted = LocalDateTime.parse(time, DateTimeFormatter.ofPattern(pattern));
+        return Date.from(formatted.atZone(ZoneId.systemDefault()).toInstant());
     }
 
 }

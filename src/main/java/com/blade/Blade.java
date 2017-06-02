@@ -48,8 +48,13 @@ public class Blade {
 
     private CountDownLatch latch = new CountDownLatch(1);
 
+    private Blade() {
+    }
+
+    private static final Blade INSTANCE = new Blade();
+
     public static Blade me() {
-        return new Blade();
+        return INSTANCE;
     }
 
     public Ioc ioc() {

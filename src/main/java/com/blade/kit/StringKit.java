@@ -18,6 +18,17 @@ public final class StringKit {
         return random.nextInt(max) % (max - min + 1) + min;
     }
 
+    public static String rand(int size) {
+        String num = "";
+        for (int i = 0; i < size; i++) {
+            double a = Math.random() * 9;
+            a = Math.ceil(a);
+            int randomNum = new Double(a).intValue();
+            num += randomNum;
+        }
+        return num;
+    }
+
     public static boolean isNotBlank(String str) {
         return null != str && !"".equals(str.trim());
     }

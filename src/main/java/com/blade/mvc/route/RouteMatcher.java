@@ -227,6 +227,16 @@ public class RouteMatcher {
         return befores;
     }
 
+    public List<Route> getBefore2(String path) {
+        String cleanPath = parsePath(path);
+        List<Route> befores = hooks.values().parallelStream()
+                .filter(route -> route.getHttpMethod() == HttpMethod.BEFORE && matchesPath(route.getPath(), cleanPath))
+                .collect(Collectors.toList());
+
+        this.giveMatch(path, befores);
+        return befores;
+    }
+
     /**
      * Find all in after of the hooks
      *
