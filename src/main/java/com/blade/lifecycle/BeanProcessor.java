@@ -1,9 +1,10 @@
 package com.blade.lifecycle;
 
-import com.blade.ioc.Ioc;
+import com.blade.Blade;
 
+@FunctionalInterface
 public interface BeanProcessor {
 
-    void register(Ioc ioc);
+    void processor(Blade blade);
 
 }

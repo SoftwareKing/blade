@@ -1,16 +1,15 @@
 package com.blade.mvc.handler;
 
 import com.blade.BladeException;
-import com.blade.exception.RouteException;
+import com.blade.kit.MethodParamNamesScaner;
+import com.blade.kit.ReflectKit;
+import com.blade.kit.StringKit;
+import com.blade.mvc.annotation.*;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
 import com.blade.mvc.http.Session;
-import com.blade.kit.StringKit;
-import com.blade.mvc.annotation.*;
 import com.blade.mvc.multipart.FileItem;
 import com.blade.mvc.ui.ModelAndView;
-import com.blade.kit.MethodParamNamesScaner;
-import com.blade.kit.ReflectKit;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -93,7 +92,7 @@ public final class MethodArgument {
                 val = Optional.of(queryParam.defaultValue());
             }
             if (required && !val.isPresent()) {
-                throw new RouteException("query param [" + paramName + "] not is empty.");
+                throw new BladeException("query param [" + paramName + "] not is empty.");
             }
             return getRequestParam(argType, val.get());
         } else {
@@ -101,7 +100,7 @@ public final class MethodArgument {
         }
     }
 
-    private static Object getCookie(Class<?> argType, CookieParam cookieParam, String paramName, Request request) throws RouteException {
+    private static Object getCookie(Class<?> argType, CookieParam cookieParam, String paramName, Request request) {
         String cookieName = StringKit.isBlank(cookieParam.value()) ? paramName : cookieParam.value();
         Optional<String> val = request.cookie(cookieName);
         boolean required = cookieParam.required();
@@ -109,12 +108,12 @@ public final class MethodArgument {
             val = Optional.of(cookieParam.defaultValue());
         }
         if (required && !val.isPresent()) {
-            throw new RouteException("cookie param [" + paramName + "] not is empty.");
+            throw new BladeException("cookie param [" + paramName + "] not is empty.");
         }
         return getRequestParam(argType, val.get());
     }
 
-    private static Object getHeader(Class<?> argType, HeaderParam headerParam, String paramName, Request request) throws RouteException {
+    private static Object getHeader(Class<?> argType, HeaderParam headerParam, String paramName, Request request) {
         String key = StringKit.isBlank(headerParam.value()) ? paramName : headerParam.value();
         Optional<String> val = request.header(key);
         boolean required = headerParam.required();
@@ -122,7 +121,7 @@ public final class MethodArgument {
             val = Optional.of(headerParam.defaultValue());
         }
         if (required && !val.isPresent()) {
-            throw new RouteException("header param [" + paramName + "] not is empty.");
+            throw new BladeException("header param [" + paramName + "] not is empty.");
         }
         return getRequestParam(argType, val.get());
     }
@@ -136,7 +135,7 @@ public final class MethodArgument {
         return getRequestParam(argType, val.get());
     }
 
-    private static Object parseModel(Class<?> argType, Request request, String name) throws BladeException {
+    private static Object parseModel(Class<?> argType, Request request, String name) {
         try {
             Field[] fields = argType.getDeclaredFields();
             if (null == fields || fields.length == 0) {
@@ -160,7 +159,7 @@ public final class MethodArgument {
             }
             return obj;
         } catch (NumberFormatException | IllegalAccessException | SecurityException e) {
-            throw new BladeException(e);
+            throw new BladeException(e.getMessage());
         }
     }
 

@@ -1,6 +1,6 @@
 package com.example.blog.context;
 
-import com.blade.ioc.Ioc;
+import com.blade.Blade;
 import com.blade.ioc.annotation.Bean;
 import com.blade.ioc.annotation.Order;
 import com.blade.lifecycle.BeanProcessor;
@@ -14,7 +14,7 @@ import com.blade.lifecycle.BeanProcessor;
 public class BP3 implements BeanProcessor {
 
     @Override
-    public void register(Ioc ioc) {
+    public void processor(Blade blade) {
         System.out.println("bp3 -> " + 2);
     }
 

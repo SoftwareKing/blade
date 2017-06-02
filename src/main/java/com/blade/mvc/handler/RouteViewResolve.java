@@ -2,12 +2,12 @@ package com.blade.mvc.handler;
 
 import com.blade.Blade;
 import com.blade.BladeException;
-import com.blade.mvc.http.Request;
-import com.blade.mvc.http.Response;
 import com.blade.ioc.Ioc;
 import com.blade.kit.ReflectKit;
 import com.blade.mvc.annotation.JSON;
 import com.blade.mvc.annotation.Path;
+import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Response;
 import com.blade.mvc.route.Route;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.template.TemplateEngine;
@@ -55,7 +55,7 @@ public class RouteViewResolve {
                 }
             }
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            throw new BladeException(e.getCause());
+            throw new BladeException(e.getMessage());
         } catch (Exception e) {
             throw e;
         }
@@ -91,7 +91,7 @@ public class RouteViewResolve {
             }
             return true;
         } catch (Exception e) {
-            throw new BladeException(e);
+            throw new BladeException(e.getMessage());
         }
     }
 

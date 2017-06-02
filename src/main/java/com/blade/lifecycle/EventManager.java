@@ -1,6 +1,7 @@
 package com.blade.lifecycle;
 
 import com.blade.Blade;
+import com.blade.ioc.OrderComparator;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -12,6 +13,7 @@ public class EventManager {
 
     private Map<Event.Type, List<EventListener>> listenerMap;
 
+    private OrderComparator<EventListener> comparator = new OrderComparator<>();
     public EventManager() {
         this.listenerMap = Stream.of(Event.Type.values()).collect(Collectors.toMap(v -> v, v -> new LinkedList<>()));
     }
@@ -21,7 +23,9 @@ public class EventManager {
     }
 
     public void fireEvent(Event.Type type, Blade blade) {
-        listenerMap.get(type).forEach(listener -> listener.handleEvent(new Event(type, blade)));
+        listenerMap.get(type).stream()
+                .sorted(comparator)
+                .forEach(listener -> listener.handleEvent(new Event(type, blade)));
     }
 
     public void fireEvent(Event.Type type) {

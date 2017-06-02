@@ -1,6 +1,5 @@
 package com.blade.mvc.ui.template;
 
-import com.blade.TemplateException;
 import com.blade.mvc.ui.ModelAndView;
 
 import java.io.Writer;
@@ -13,6 +12,6 @@ import java.io.Writer;
  */
 public interface TemplateEngine {
 
-    void render(ModelAndView modelAndView, Writer writer) throws TemplateException;
+    void render(ModelAndView modelAndView, Writer writer);
 
 }

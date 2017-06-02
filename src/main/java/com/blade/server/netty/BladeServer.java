@@ -1,13 +1,13 @@
 package com.blade.server.netty;
 
 import com.blade.Blade;
-import com.blade.banner.BannerStarter;
 import com.blade.Environment;
+import com.blade.banner.BannerStarter;
 import com.blade.ioc.BeanDefine;
 import com.blade.ioc.DynamicContext;
 import com.blade.ioc.Ioc;
+import com.blade.ioc.OrderComparator;
 import com.blade.ioc.annotation.Bean;
-import com.blade.ioc.annotation.Order;
 import com.blade.ioc.reader.ClassInfo;
 import com.blade.kit.BladeKit;
 import com.blade.kit.ReflectKit;
@@ -49,7 +49,7 @@ public class BladeServer {
     private String[] args;
     private Environment environment;
     private EventLoopGroup bossGroup, workerGroup;
-    private Set<String> pkgs = new HashSet<>(Arrays.asList("com.blade"));
+    private Set<String> pkgs = new HashSet<>(Arrays.asList("com.blade.plugin"));
 
     private RouteBuilder routeBuilder;
 
@@ -80,10 +80,11 @@ public class BladeServer {
                 // 3. 初始化ioc
                 this.initIoc();
 
-                beanProcessors.forEach(b -> b.register(blade.ioc()));
+                // 4. 执行beanprocessor、启动事件
+                beanProcessors.stream().sorted(new OrderComparator<>()).forEach(b -> b.processor(blade));
                 startedEvents.forEach(e -> blade.event(Event.Type.SERVER_STARTED, e));
 
-                // 4. 启动web服务
+                // 5. 启动web服务
                 this.startServer(initStart);
             } catch (Exception e) {
                 log.error("start server error", e);
@@ -98,10 +99,9 @@ public class BladeServer {
         routeBuilder = new RouteBuilder(routeMatcher);
 
         pkgs.stream()
-                .flatMap((DynamicContext::recursionFindClasses))
+                .flatMap(DynamicContext::recursionFindClasses)
                 .map(ClassInfo::getClazz)
                 .filter(ReflectKit::isNormalClass)
-                .sorted(this::compareTo)
                 .forEach(this::parseCls);
 
         routeMatcher.register();
@@ -170,14 +170,6 @@ public class BladeServer {
             beanProcessors.add((BeanProcessor) blade.ioc().getBean(clazz));
         if (ReflectKit.hasInterface(clazz, StartedEvent.class))
             startedEvents.add((StartedEvent) blade.ioc().getBean(clazz));
-    }
-
-    private int compareTo(Class<?> c1, Class<?> c2) {
-        Order o1 = c1.getAnnotation(Order.class);
-        Order o2 = c2.getAnnotation(Order.class);
-        Integer order1 = null != o1 ? o1.value() : Integer.MAX_VALUE;
-        Integer order2 = null != o2 ? o2.value() : Integer.MAX_VALUE;
-        return order1.compareTo(order2);
     }
 
     private void loadConfig() {

@@ -208,7 +208,7 @@ public class RouteMatcher {
             }
             return route;
         } catch (Exception e) {
-            throw new BladeException(e);
+            throw new BladeException(e.getMessage());
         }
     }
 
