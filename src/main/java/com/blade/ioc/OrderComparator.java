@@ -18,4 +18,5 @@ public class OrderComparator<T> implements Comparator<T> {
         Integer order2 = null != o2 ? o2.value() : Integer.MAX_VALUE;
         return order1.compareTo(order2);
     }
+
 }

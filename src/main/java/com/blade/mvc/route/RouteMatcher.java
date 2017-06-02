@@ -1,14 +1,14 @@
 package com.blade.mvc.route;
 
 import com.blade.BladeException;
-import com.blade.mvc.http.HttpMethod;
-import com.blade.mvc.http.Request;
-import com.blade.mvc.http.Response;
 import com.blade.kit.Assert;
 import com.blade.kit.PathKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
 import com.blade.mvc.RouteHandler;
+import com.blade.mvc.http.HttpMethod;
+import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ public class RouteMatcher {
     private Map<String, Route> routes = new HashMap<>();
     private Map<String, Route> interceptors = new HashMap<>();
 
-    private List<Route> interceptorRoutes = new ArrayList<>();
+//    private List<Route> interceptorRoutes = new ArrayList<>();
 
     private static final Pattern PATH_VARIABLE_PATTERN = Pattern.compile(":(\\w+)");
 
@@ -242,8 +242,8 @@ public class RouteMatcher {
 
         String cleanPath = parsePath(path);
 
-        List<Route> befores = interceptorRoutes.stream()
-                .filter(route -> matchesPath(route.getPath(), cleanPath) && route.getHttpMethod() == HttpMethod.BEFORE)
+        List<Route> befores = interceptors.values().stream()
+                .filter(route -> route.getHttpMethod() == HttpMethod.BEFORE && matchesPath(route.getPath(), cleanPath))
                 .collect(Collectors.toList());
 
         this.giveMatch(path, befores);
@@ -259,8 +259,8 @@ public class RouteMatcher {
     public List<Route> getAfter(String path) {
         String cleanPath = parsePath(path);
 
-        List<Route> afters = interceptorRoutes.stream()
-                .filter(route -> matchesPath(route.getPath(), cleanPath) && route.getHttpMethod() == HttpMethod.AFTER)
+        List<Route> afters = interceptors.values().stream()
+                .filter(route -> route.getHttpMethod() == HttpMethod.AFTER && matchesPath(route.getPath(), cleanPath))
                 .collect(Collectors.toList());
 
         this.giveMatch(path, afters);
@@ -315,6 +315,7 @@ public class RouteMatcher {
     public void register() {
 
         routes.values().forEach(route -> log.info("Add route => {}", route));
+        interceptors.values().forEach(route -> log.info("Add hook  => {}", route));
 
         List<Route> routeHandlers = new ArrayList<>(routes.values());
         routeHandlers.addAll(interceptors.values());

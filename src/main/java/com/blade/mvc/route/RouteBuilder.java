@@ -1,11 +1,12 @@
 package com.blade.mvc.route;
 
-import com.blade.mvc.http.HttpMethod;
-import com.blade.mvc.http.Request;
-import com.blade.mvc.http.Response;
 import com.blade.kit.ReflectKit;
 import com.blade.mvc.annotation.Intercept;
 import com.blade.mvc.annotation.Path;
+import com.blade.mvc.hook.Invoker;
+import com.blade.mvc.http.HttpMethod;
+import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Response;
 import com.blade.mvc.interceptor.Interceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,19 @@ public class RouteBuilder {
         Method after = ReflectKit.getMethod(interceptor, "after", Request.class, Response.class);
         buildRoute(interceptor, before, partten, HttpMethod.BEFORE);
         buildRoute(interceptor, after, partten, HttpMethod.AFTER);
+    }
 
+    public void addWebHook(final Class<?> webHook) {
+        Path path = webHook.getAnnotation(Path.class);
+        String partten = "/.*";
+        if (null != path) {
+            partten = path.value();
+        }
+
+        Method before = ReflectKit.getMethod(webHook, "before", Invoker.class);
+        Method after = ReflectKit.getMethod(webHook, "after", Invoker.class);
+        buildRoute(webHook, before, partten, HttpMethod.BEFORE);
+        buildRoute(webHook, after, partten, HttpMethod.AFTER);
     }
 
     /**

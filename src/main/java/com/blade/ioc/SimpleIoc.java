@@ -149,6 +149,11 @@ public class SimpleIoc implements Ioc {
     }
 
     @Override
+    public BeanDefine getBeanDefine(Class<?> type) {
+        return this.getBeanDefine(type, true);
+    }
+
+    @Override
     public List<Object> getBeans() {
         Set<String> beanNames = this.getBeanNames();
         List<Object> beans = new ArrayList<>(beanNames.size());

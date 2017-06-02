@@ -5,6 +5,7 @@ import com.blade.kit.MethodParamNamesScaner;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
 import com.blade.mvc.annotation.*;
+import com.blade.mvc.hook.Invoker;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
 import com.blade.mvc.http.Session;
@@ -62,7 +63,10 @@ public final class MethodArgument {
                 if (ReflectKit.isBasicType(argType)) {
                     args[i] = request.query(paramName);
                 } else {
-                    if (argType == Request.class) {
+                    if (argType == Invoker.class) {
+                        args[i] = new Invoker(request, response);
+                        continue;
+                    } else if (argType == Request.class) {
                         args[i] = request;
                         continue;
                     } else if (argType == Response.class) {

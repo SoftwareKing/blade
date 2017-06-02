@@ -1,15 +1,15 @@
 package com.blade.server.netty;
 
 import com.blade.Blade;
-import com.blade.mvc.http.HttpRequest;
-import com.blade.mvc.http.HttpResponse;
-import com.blade.mvc.http.Request;
-import com.blade.mvc.http.Response;
 import com.blade.ioc.Ioc;
 import com.blade.kit.PathKit;
 import com.blade.mvc.RouteHandler;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
+import com.blade.mvc.http.HttpRequest;
+import com.blade.mvc.http.HttpResponse;
+import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Response;
 import com.blade.mvc.route.Route;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.template.TemplateEngine;
@@ -79,13 +79,20 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             staticFileHandler.execute(ctx, request, response, uri);
         } else {
             WebContext.set(new WebContext(request, response));
-            Route route = routeMatcher.getRoute(request.method(), uri);
-            if (null != route) {
-                // execute
-                HttpServerHandler.this.routeHandle(request, response, route);
-            } else {
-                // 404
-                sendError(ctx, NOT_FOUND);
+            // web hook
+            int interrupts = routeMatcher.getBefore(uri).stream()
+                    .mapToInt(route -> this.invokeHook(request, response, route)).sum();
+
+            if (interrupts == 0) {
+                Route route = routeMatcher.getRoute(request.method(), uri);
+                if (null != route) {
+                    // execute
+                    this.routeHandle(request, response, route);
+                    routeMatcher.getAfter(uri).forEach(r -> this.invokeHook(request, response, r));
+                } else {
+                    // 404
+                    sendError(ctx, NOT_FOUND);
+                }
             }
             WebContext.remove();
         }
@@ -119,7 +126,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
      * @param response response object
      * @param route    route object
      */
-    private void routeHandle(Request request, Response response, Route route) throws Exception {
+    private void routeHandle(Request request, Response response, Route route) {
         Object target = route.getTarget();
         if (null == target) {
             Class<?> clazz = route.getAction().getDeclaringClass();
@@ -132,6 +139,18 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         } else {
             routeViewResolve.handle(request, response, route);
         }
+    }
+
+    /**
+     * Methods to perform the interceptor
+     *
+     * @param request      request object
+     * @param response     response object
+     * @param interceptors execute the interceptor list
+     * @return Return execute is ok
+     */
+    private int invokeHook(Request request, Response response, Route route) {
+        return routeViewResolve.intercept(request, response, route) ? 0 : 1;
     }
 
 }

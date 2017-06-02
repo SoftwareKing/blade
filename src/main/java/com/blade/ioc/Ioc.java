@@ -25,6 +25,8 @@ public interface Ioc {
 
     List<BeanDefine> getBeanDefines();
 
+    BeanDefine getBeanDefine(Class<?> type);
+
     List<Object> getBeans();
 
     Set<String> getBeanNames();

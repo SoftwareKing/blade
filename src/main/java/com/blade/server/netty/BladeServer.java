@@ -15,6 +15,7 @@ import com.blade.lifecycle.BeanProcessor;
 import com.blade.lifecycle.Event;
 import com.blade.lifecycle.StartedEvent;
 import com.blade.mvc.annotation.Path;
+import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.route.RouteBuilder;
 import com.blade.mvc.route.RouteMatcher;
 import io.netty.bootstrap.ServerBootstrap;
@@ -164,6 +165,8 @@ public class BladeServer {
             blade.register(clazz);
         if (null != clazz.getAnnotation(Path.class))
             routeBuilder.addRouter(clazz);
+        if (ReflectKit.hasInterface(clazz, WebHook.class))
+            routeBuilder.addWebHook(clazz);
         if (ReflectKit.hasInterface(clazz, Interceptor.class))
             routeBuilder.addInterceptor(clazz);
         if (ReflectKit.hasInterface(clazz, BeanProcessor.class))

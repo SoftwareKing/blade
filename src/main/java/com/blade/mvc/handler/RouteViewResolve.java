@@ -12,7 +12,6 @@ import com.blade.mvc.route.Route;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.template.TemplateEngine;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class RouteViewResolve {
@@ -25,7 +24,7 @@ public class RouteViewResolve {
         this.templateEngine = blade.templateEngine();
     }
 
-    public void handle(Request request, Response response, Route route) throws Exception {
+    public void handle(Request request, Response response, Route route) {
         try {
             Method actionMethod = route.getAction();
             Object target = route.getTarget();
@@ -54,10 +53,8 @@ public class RouteViewResolve {
                     }
                 }
             }
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            throw new BladeException(e.getMessage());
         } catch (Exception e) {
-            throw e;
+            throw new BladeException(e.getMessage());
         }
     }
 

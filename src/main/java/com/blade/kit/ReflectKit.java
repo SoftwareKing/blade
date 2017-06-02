@@ -52,6 +52,16 @@ public class ReflectKit {
         return injectors;
     }
 
+    public static void injection(Ioc ioc, Class<?> type) {
+        BeanDefine beanDefine = ioc.getBeanDefine(type);
+        ClassDefine classDefine = ClassDefine.create(type);
+        List<FieldInjector> fieldInjectors = getInjectFields(ioc, classDefine);
+        Object bean = beanDefine.getBean();
+        for (FieldInjector fieldInjector : fieldInjectors) {
+            fieldInjector.injection(bean);
+        }
+    }
+
     public static void injection(Ioc ioc, BeanDefine beanDefine) {
         ClassDefine classDefine = ClassDefine.create(beanDefine.getType());
         List<FieldInjector> fieldInjectors = getInjectFields(ioc, classDefine);
