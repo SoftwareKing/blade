@@ -68,6 +68,11 @@ public class IndexController {
         aService.exp();
     }
 
+    @GetRoute(values = "empty")
+    public void empty() {
+        System.out.println("empty request");
+    }
+
     @GetRoute(values = "download")
     public void download(Response response) {
         String path = Const.CLASSPATH + "static/a.txt";

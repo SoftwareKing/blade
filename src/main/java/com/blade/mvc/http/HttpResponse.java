@@ -1,5 +1,6 @@
 package com.blade.mvc.http;
 
+import com.blade.Blade;
 import com.blade.BladeException;
 import com.blade.kit.DateKit;
 import com.blade.kit.JsonKit;
@@ -61,6 +62,7 @@ public class HttpResponse implements Response {
     public HttpResponse(ChannelHandlerContext ctx, TemplateEngine templateEngine) {
         this.ctx = ctx;
         this.templateEngine = templateEngine;
+        headers.set(SERVER, "blade/" + Blade.VER);
     }
 
     @Override
