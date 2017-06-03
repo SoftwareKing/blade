@@ -164,10 +164,15 @@ public class WebServer {
     }
 
     private void initConfig(Class<?> mainCls) {
+        BannerStarter.printStart();
+        if (null == mainCls) {
+            return;
+        }
+
         if (blade.scanPackages().size() == 1 && blade.scanPackages().contains(Const.PLUGIN_PACKAGE_NAME)) {
             blade.scanPackages(mainCls.getPackage().getName());
         }
-        BannerStarter.printStart();
+
     }
 
     public void stop() {

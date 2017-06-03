@@ -8,11 +8,19 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
+ * Http Request
+ *
  * @author biezhi
  *         2017/5/31
  */
 public interface Request {
 
+    /**
+     * init request path parameters
+     *
+     * @param pathParams
+     * @return
+     */
     Request initPathParams(Map<String, String> pathParams);
 
     /**
@@ -21,15 +29,15 @@ public interface Request {
     String host();
 
     /**
-     * @return Return request URI
+     * @return Return request uri
      */
     String uri();
 
+    /**
+     * @return request url
+     */
     String url();
 
-    /**
-     * @return Return UA
-     */
     String userAgent();
 
     /**
@@ -45,7 +53,7 @@ public interface Request {
     /**
      * @return Return parameters on the path Map
      */
-    Map<String, String> initPathParams();
+    Map<String, String> pathParams();
 
     /**
      * Get a URL parameter
@@ -207,6 +215,12 @@ public interface Request {
      */
     String cookie(String name, String defaultValue);
 
+    /**
+     * Add a cookie to the request
+     *
+     * @param cookie
+     * @return
+     */
     Request cookie(Cookie cookie);
 
     /**
@@ -231,6 +245,9 @@ public interface Request {
      */
     String header(String name, String defaultValue);
 
+    /**
+     * @return return current request connection keepAlive
+     */
     boolean keepAlive();
 
     /**
@@ -254,8 +271,17 @@ public interface Request {
      */
     Map<String, Object> attributes();
 
+    /**
+     * @return return request file items
+     */
     Map<String, FileItem> fileItems();
 
+    /**
+     * get file item by request part name
+     *
+     * @param name
+     * @return
+     */
     Optional<FileItem> fileItem(String name);
 
     /**
@@ -263,6 +289,9 @@ public interface Request {
      */
     ByteBuf body();
 
+    /**
+     * @return return request body to string
+     */
     String bodyToString();
 
 }

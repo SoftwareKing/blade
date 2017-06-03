@@ -9,8 +9,8 @@ import io.netty.channel.ChannelHandlerContext;
  *         2017/6/3
  */
 @FunctionalInterface
-public interface RequestHandler {
+public interface RequestHandler<R> {
 
-    void handle(ChannelHandlerContext ctx, Request request, Response response) throws Exception;
+    R handle(ChannelHandlerContext ctx, Request request, Response response) throws Exception;
 
 }

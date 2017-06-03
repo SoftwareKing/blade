@@ -4,6 +4,7 @@ import com.blade.BladeException;
 import com.blade.kit.StringKit;
 import com.blade.kit.WebKit;
 import com.blade.mvc.Const;
+import com.blade.mvc.WebContext;
 import com.blade.mvc.multipart.FileItem;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,17 +14,16 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.multipart.*;
 import io.netty.util.CharsetUtil;
-import org.omg.CORBA.CTX_RESTRICT_SCOPE;
 
 import java.io.IOException;
 import java.net.URLConnection;
 import java.util.*;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 
 /**
+ * Http Request Impl
+ *
  * @author biezhi
  *         2017/5/31
  */
@@ -46,29 +46,28 @@ public class HttpRequest implements Request {
 
     private Map<String, FileItem> fileItems = new HashMap<>();
 
-    private SessionManager sessionManager;
-
-    public HttpRequest(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest, SessionManager sessionManager) {
+    public HttpRequest(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) {
         this.ctx = ctx;
         this.fullHttpRequest = fullHttpRequest;
-        this.sessionManager = sessionManager;
         this.init();
     }
 
     private void init() {
-        // 初始化header信息
+        // headers
         fullHttpRequest.headers().forEach((header) -> headers.put(header.getKey(), header.getValue()));
-        // 初始化body
+
+        // body content
         this.body = fullHttpRequest.content().copy();
-        // 初始化请求参数
+
+        // request query parameters
         this.parameters.putAll(new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).parameters());
+
         if (!fullHttpRequest.method().name().equals("GET")) {
-            // 是POST请求
             HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(HTTP_DATA_FACTORY, fullHttpRequest);
             decoder.getBodyHttpDatas().stream().forEach(this::parseData);
         }
 
-        // 初始化cookie
+        // cookies
         if (StringKit.isNotBlank(header(COOKIE))) {
             ServerCookieDecoder.LAX.decode(header(COOKIE)).forEach(this::parseCookie);
         }
@@ -102,6 +101,11 @@ public class HttpRequest implements Request {
         }
     }
 
+    /**
+     * parse netty cookie to {@link Cookie}.
+     *
+     * @param nettyCookie
+     */
     private void parseCookie(io.netty.handler.codec.http.cookie.Cookie nettyCookie) {
         Cookie cookie = new Cookie();
         cookie.name(nettyCookie.name());
@@ -115,25 +119,24 @@ public class HttpRequest implements Request {
 
     @Override
     public Request initPathParams(Map<String, String> pathParams) {
-        if (null != pathParams) {
-            this.pathParams = pathParams;
-        }
+        if (null != pathParams) this.pathParams = pathParams;
         return this;
     }
 
     @Override
     public String host() {
-        return ctx.channel().remoteAddress().toString().substring(1);
+        String remoteAddr = ctx.channel().remoteAddress().toString();
+        return StringKit.isNotBlank(remoteAddr) ? remoteAddr.substring(1) : "Unknown";
     }
 
     @Override
     public String uri() {
-        return fullHttpRequest.uri();
+        return new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).path();
     }
 
     @Override
     public String url() {
-        return new QueryStringDecoder(uri(), CharsetUtil.UTF_8).uri();
+        return new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).uri();
     }
 
     @Override
@@ -152,7 +155,7 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Map<String, String> initPathParams() {
+    public Map<String, String> pathParams() {
         return this.pathParams;
     }
 
@@ -266,6 +269,7 @@ public class HttpRequest implements Request {
     public Session session() {
         Optional<String> sessionId = cookie(Const.SESSION_COOKIE_NAME);
         if (sessionId.isPresent()) {
+            SessionManager sessionManager = WebContext.sessionManager();
             return sessionManager.getSession(sessionId.get());
         }
         return null;

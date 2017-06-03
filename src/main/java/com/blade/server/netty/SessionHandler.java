@@ -12,7 +12,7 @@ import java.util.Optional;
  * @author biezhi
  *         2017/6/3
  */
-public class SessionHandler implements RequestHandler {
+public class SessionHandler implements RequestHandler<SessionManager> {
 
     private SessionManager sessionManager;
 
@@ -21,7 +21,7 @@ public class SessionHandler implements RequestHandler {
     }
 
     @Override
-    public void handle(ChannelHandlerContext ctx, Request request, Response response) {
+    public SessionManager handle(ChannelHandlerContext ctx, Request request, Response response) {
         Session session = getSession(request);
         if (null == session) {
             createSession(request, response);
@@ -30,6 +30,7 @@ public class SessionHandler implements RequestHandler {
                 removeSession(session, response);
             }
         }
+        return sessionManager;
     }
 
     private void createSession(Request request, Response response) {

@@ -1,5 +1,6 @@
 package com.blade;
 
+import com.blade.kit.Assert;
 import com.blade.kit.ason.Ason;
 import com.blade.mvc.Const;
 import com.github.kevinsawicki.http.HttpRequest;
@@ -36,8 +37,10 @@ public class RequestTest extends BaseTestCase {
 
     @Test
     public void testGetCookies() throws Exception {
-        start(app.get("/cookie", (req, res) -> res.text(req.cookies().toString())));
-        assertThat(getBody("/cookie"), is("{}"));
+        start(app.get("/cookie", (req, res) -> res.json(req.cookies())));
+        String body = getBody("/cookie");
+        Ason ason = new Ason(body);
+        Assert.notNull(ason.get(Const.SESSION_COOKIE_NAME), "session is null");
     }
 
     @Test

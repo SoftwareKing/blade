@@ -13,7 +13,6 @@ import com.blade.mvc.http.*;
 import com.blade.mvc.route.Route;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.DefaultUI;
-import com.blade.mvc.ui.template.TemplateEngine;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
@@ -31,8 +30,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -48,29 +45,23 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
 
     public static final Logger log = LoggerFactory.getLogger(HttpServerHandler.class);
 
-    private Ioc ioc;
+    private Blade blade;
     private RouteMatcher routeMatcher;
     private RouteViewResolve routeViewResolve;
     private Set<String> statics;
-    private boolean showFileList;
-    private boolean devMode;
-    private TemplateEngine templateEngine;
 
     private StaticFileHandler staticFileHandler;
 
-    private SessionManager sessionManager;
     private SessionHandler sessionHandler;
 
     public HttpServerHandler(Blade blade) {
-        this.ioc = blade.ioc();
+        this.blade = blade;
         this.statics = blade.getStatics();
-        this.devMode = blade.devMode();
-        this.templateEngine = blade.templateEngine();
+
         this.routeMatcher = blade.routeMatcher();
         this.routeViewResolve = new RouteViewResolve(blade);
         this.staticFileHandler = new StaticFileHandler(blade);
-        this.sessionManager = blade.sessionManager();
-        this.sessionHandler = new SessionHandler(this.sessionManager);
+        this.sessionHandler = new SessionHandler(blade.sessionManager());
     }
 
     @Override
@@ -79,8 +70,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
-        Request request = new HttpRequest(ctx, fullHttpRequest, sessionManager);
-        Response response = new HttpResponse(ctx, templateEngine);
+        Request request = new HttpRequest(ctx, fullHttpRequest);
+        Response response = new HttpResponse(ctx, blade.templateEngine());
 
         // reuqest uri
         String uri = request.uri();
@@ -88,19 +79,17 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
 
         if (isStaticFile(uri)) {
             staticFileHandler.handle(ctx, request, response);
+            return;
         }
 
         // execute session
-        sessionHandler.handle(ctx, request, response);
+        SessionManager sessionManager = sessionHandler.handle(ctx, request, response);
 
         WebContext.set(new WebContext(sessionManager, request, response));
 
         // web hook
         int interrupts = routeMatcher.getBefore(uri).stream().mapToInt(route -> this.invokeHook(request, response, route)).sum();
-
-        if (interrupts > 0) {
-            return;
-        }
+        if (interrupts > 0) return;
 
         Route route = routeMatcher.lookupRoute(request.method(), uri);
         if (null == route) {
@@ -129,6 +118,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         if (cause instanceof BladeException) {
             String error = cause.getMessage();
             Response response = WebContext.response();
+            boolean devMode = blade.devMode();
             String contentType = null != response ? response.contentType() : Const.CONTENT_TYPE_TEXT;
             if (!devMode || !contentType.contains("html")) {
                 sendError(ctx, INTERNAL_SERVER_ERROR, error);
@@ -175,7 +165,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         Object target = route.getTarget();
         if (null == target) {
             Class<?> clazz = route.getAction().getDeclaringClass();
-            target = ioc.getBean(clazz);
+            target = blade.getBean(clazz);
             route.setTarget(target);
         }
         if (route.getTargetType() == RouteHandler.class) {

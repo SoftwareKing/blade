@@ -147,6 +147,10 @@ public class Blade {
         return this;
     }
 
+    public Object getBean(Class<?> cls) {
+        return ioc.getBean(cls);
+    }
+
     public boolean devMode() {
         return this.devMode;
     }

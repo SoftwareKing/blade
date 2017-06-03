@@ -31,6 +31,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -41,7 +42,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  * @author biezhi
  *         2017/5/31
  */
-public class StaticFileHandler implements RequestHandler {
+public class StaticFileHandler implements RequestHandler<Boolean> {
 
     public static final Logger log = LoggerFactory.getLogger(StaticFileHandler.class);
 
@@ -63,10 +64,10 @@ public class StaticFileHandler implements RequestHandler {
      * @throws Exception
      */
     @Override
-    public void handle(ChannelHandlerContext ctx, Request request, Response response) throws Exception {
+    public Boolean handle(ChannelHandlerContext ctx, Request request, Response response) throws Exception {
         if (!"GET".equals(request.method())) {
             sendError(ctx, METHOD_NOT_ALLOWED);
-            return;
+            return false;
         }
 
         String uri = request.uri();
@@ -77,7 +78,7 @@ public class StaticFileHandler implements RequestHandler {
                 sendError(ctx, NOT_FOUND);
             } else {
                 if (http304(ctx, request, -1)) {
-                    return;
+                    return false;
                 }
                 String content = IOKit.readToString(input);
                 FullHttpResponse httpResponse = new DefaultFullHttpResponse(Const.HTTP_VERSION, OK, Unpooled.copiedBuffer(content, CharsetUtil.UTF_8));
@@ -91,19 +92,19 @@ public class StaticFileHandler implements RequestHandler {
                 // Write the initial line and the header.
                 ctx.writeAndFlush(httpResponse);
             }
-            return;
+            return false;
         }
 
         final String path = sanitizeUri(uri);
         if (path == null) {
             sendError(ctx, FORBIDDEN);
-            return;
+            return false;
         }
 
         File file = new File(path);
         if (file.isHidden() || !file.exists()) {
             sendError(ctx, NOT_FOUND);
-            return;
+            return false;
         }
 
         if (file.isDirectory() && showFileList) {
@@ -112,17 +113,17 @@ public class StaticFileHandler implements RequestHandler {
             } else {
                 response.redirect(uri + '/');
             }
-            return;
+            return false;
         }
 
         if (!file.isFile()) {
             sendError(ctx, FORBIDDEN);
-            return;
+            return false;
         }
 
         // Cache Validation
         if (http304(ctx, request, file.lastModified())) {
-            return;
+            return false;
         }
 
         RandomAccessFile raf;
@@ -130,7 +131,7 @@ public class StaticFileHandler implements RequestHandler {
             raf = new RandomAccessFile(file, "r");
         } catch (FileNotFoundException ignore) {
             sendError(ctx, NOT_FOUND);
-            return;
+            return false;
         }
 
         long fileLength = raf.length();
@@ -167,6 +168,7 @@ public class StaticFileHandler implements RequestHandler {
         if (!request.keepAlive()) {
             lastContentFuture.addListener(ChannelFutureListener.CLOSE);
         }
+        return false;
     }
 
     private boolean http304(ChannelHandlerContext ctx, Request request, long lastModified) {
