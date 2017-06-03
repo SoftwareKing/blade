@@ -1,6 +1,8 @@
 package io.example.blog.controller;
 
 import com.blade.ioc.annotation.Inject;
+import com.blade.kit.StringKit;
+import com.blade.mvc.Const;
 import com.blade.mvc.annotation.*;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
@@ -9,6 +11,8 @@ import com.blade.mvc.multipart.FileItem;
 import com.blade.mvc.ui.RestResponse;
 import io.example.blog.model.Article;
 import io.example.blog.service.AService;
+
+import java.io.File;
 
 /**
  * @author biezhi
@@ -62,6 +66,12 @@ public class IndexController {
     @GetRoute(values = "exp2")
     public void exp2() {
         aService.exp();
+    }
+
+    @GetRoute(values = "download")
+    public void download(Response response) {
+        String path = Const.CLASSPATH + "static/a.txt";
+        response.donwload("文件.txt", new File(path));
     }
 
 }

@@ -1,6 +1,8 @@
 package com.blade;
 
 /**
+ * Blade Runtime Exception
+ *
  * @author biezhi
  *         2017/5/31
  */

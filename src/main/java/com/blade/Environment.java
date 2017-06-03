@@ -19,6 +19,8 @@ import java.util.Optional;
 import java.util.Properties;
 
 /**
+ * properties config env
+ *
  * @author biezhi
  *         2017/6/1
  */
@@ -31,33 +33,79 @@ public class Environment {
     private Environment() {
     }
 
+    /**
+     * Properties to Environment
+     *
+     * @param props
+     * @return
+     */
     public static Environment of(Properties props) {
         Environment environment = new Environment();
         environment.props = props;
         return environment;
     }
 
+    /**
+     * Map to Environment
+     *
+     * @param map
+     * @return
+     */
     public static Environment of(Map<String, String> map) {
         Environment environment = new Environment();
         map.forEach((key, value) -> environment.props.setProperty(key, value));
         return environment;
     }
 
-    public static Environment load() {
-        return load("app.properties");
+    /**
+     * load Environment by URL
+     *
+     * @param url
+     * @return
+     */
+    public Environment of(URL url) {
+        String location = url.getPath();
+        try {
+            location = URLDecoder.decode(location, "utf-8");
+            return of(url.openStream(), location);
+        } catch (UnsupportedEncodingException e) {
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return null;
     }
 
-    public static Environment load(String location) {
+    /**
+     * load Environment by file
+     *
+     * @param file
+     * @return
+     */
+    public static Environment of(File file) {
+        try {
+            return of(Files.newInputStream(Paths.get(file.getPath())), file.getName());
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * load Environment by location
+     *
+     * @param location
+     * @return
+     */
+    public static Environment of(String location) {
         if (location.startsWith("classpath:")) {
             location = location.substring("classpath:".length());
-            return new Environment().loadClasspath(location);
+            return loadClasspath(location);
         } else if (location.startsWith("file:")) {
             location = location.substring("file:".length());
-            return new Environment().load(new File(location));
+            return new Environment().of(new File(location));
         } else if (location.startsWith("url:")) {
             location = location.substring("url:".length());
             try {
-                return new Environment().load(new URL(location));
+                return new Environment().of(new URL(location));
             } catch (MalformedURLException e) {
                 log.error("", e);
                 return null;
@@ -67,45 +115,26 @@ public class Environment {
         }
     }
 
-    // 从 URL 载入
-    public Environment load(URL url) {
-        String location = url.getPath();
-        try {
-            location = URLDecoder.decode(location, "utf-8");
-            return loadInputStream(url.openStream(), location);
-        } catch (UnsupportedEncodingException e) {
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-        return null;
-    }
-
-    // 从 File 载入
-    public Environment load(File file) {
-        try {
-            return loadInputStream(Files.newInputStream(Paths.get(file.getPath())), file.getName());
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    // 从 classpath 下面载入
-    private Environment loadClasspath(String classpath) {
+    private static Environment loadClasspath(String classpath) {
         if (classpath.startsWith("/")) {
             classpath = classpath.substring(1);
         }
         InputStream is = getDefault().getResourceAsStream(classpath);
-        return loadInputStream(is, classpath);
-    }
-
-    private Environment loadInputStream(InputStream is, String location) {
-        if (is == null) {
-            log.warn("InputStream not found: " + location);
+        if (null == is) {
             return new Environment();
         }
+        return of(is, classpath);
+    }
+
+    private static Environment of(InputStream is, String location) {
+        if (is == null) {
+            log.warn("InputStream not found: " + location);
+            return null;
+        }
         try {
-            this.props.load(is);
-            return this;
+            Environment environment = new Environment();
+            environment.props.load(is);
+            return environment;
         } catch (IOException e) {
             throw new IllegalStateException(e);
         } finally {
@@ -174,6 +203,27 @@ public class Environment {
     public Long getLong(String key, long defaultValue) {
         if (getLong(key).isPresent()) {
             return getLong(key).get();
+        }
+        return defaultValue;
+    }
+
+    public Optional<Boolean> getBoolean(String key) {
+        if (get(key).isPresent()) {
+            return Optional.of(Boolean.valueOf(get(key).get()));
+        }
+        return Optional.empty();
+    }
+
+    public Optional<Double> getDouble(String key) {
+        if (get(key).isPresent()) {
+            return Optional.of(Double.valueOf(get(key).get()));
+        }
+        return Optional.empty();
+    }
+
+    public Double getDouble(String key, double defaultValue) {
+        if (getDouble(key).isPresent()) {
+            return getDouble(key).get();
         }
         return defaultValue;
     }

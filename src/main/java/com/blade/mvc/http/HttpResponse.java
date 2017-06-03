@@ -1,16 +1,21 @@
 package com.blade.mvc.http;
 
+import com.blade.BladeException;
 import com.blade.kit.DateKit;
 import com.blade.kit.JsonKit;
+import com.blade.kit.StringKit;
 import com.blade.mvc.Const;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.template.TemplateEngine;
+import com.blade.server.netty.FileProgressiveFutureListener;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.DefaultFileRegion;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
@@ -18,14 +23,18 @@ import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.io.Writer;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * @author biezhi
@@ -36,7 +45,6 @@ public class HttpResponse implements Response {
     private static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
 
     private ChannelHandlerContext ctx;
-    private FullHttpResponse response;
 
     private String contentType = Const.CONTENT_TYPE_HTML;
     private HttpVersion httpVersion = HttpVersion.HTTP_1_1;
@@ -187,6 +195,43 @@ public class HttpResponse implements Response {
     }
 
     @Override
+    public void donwload(String fileName, File file) {
+        try {
+            final RandomAccessFile raf = new RandomAccessFile(file, "r");
+            long fileLength = raf.length();
+            this.contentType = StringKit.mimeType(file.getName());
+
+            this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
+
+            io.netty.handler.codec.http.HttpResponse httpResponse = new DefaultHttpResponse(HTTP_1_1, OK);
+            boolean keepAlive = WebContext.request().keepAlive();
+            if (keepAlive) {
+                httpResponse.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+            }
+            httpResponse.headers().set(CONTENT_TYPE, this.contentType);
+            httpResponse.headers().set("Content-Disposition", "attachment; filename=" + new String(fileName.getBytes("UTF-8"), "ISO8859_1"));
+            httpResponse.headers().set(CONTENT_LENGTH, fileLength);
+
+            // Write the initial line and the header.
+            ctx.write(httpResponse);
+
+            ChannelFuture sendFileFuture = ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength), ctx.newProgressivePromise());
+            // Write the end marker.
+            ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+
+            sendFileFuture.addListener(FileProgressiveFutureListener.build(raf));
+            // Decide whether to close the connection or not.
+            if (!keepAlive) {
+                lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+            }
+
+            isCommit = true;
+        } catch (Exception e) {
+            throw new BladeException(e);
+        }
+    }
+
+    @Override
     public void render(String view) {
         this.render(new ModelAndView(view));
     }
@@ -218,10 +263,15 @@ public class HttpResponse implements Response {
         isCommit = true;
     }
 
-
     @Override
     public void redirect(String newUri) {
-        response.headers().set(HttpHeaders.Names.LOCATION, newUri);
+        if (newUri.charAt(0) == '/') {
+            headers.set(HttpHeaders.Names.LOCATION, "http://127.0.0.1:9001" + newUri);
+        } else {
+            headers.set(HttpHeaders.Names.LOCATION, newUri);
+        }
+        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(302), Unpooled.copiedBuffer("", CharsetUtil.UTF_8));
+        this.send(response);
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.blade.mvc.http;
 
 import com.blade.mvc.ui.ModelAndView;
 
+import java.io.File;
 import java.util.Map;
 
 /**
@@ -131,6 +132,8 @@ public interface Response {
      * @return
      */
     void json(Object bean);
+
+    void donwload(String fileName, File file);
 
     /**
      * Render view

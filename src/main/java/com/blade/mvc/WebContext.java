@@ -2,20 +2,26 @@ package com.blade.mvc;
 
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
+import com.blade.mvc.http.SessionManager;
 import io.netty.util.concurrent.FastThreadLocal;
 
 /**
+ * Blade Web Context
+ *
  * @author biezhi
  *         2017/6/1
  */
 public class WebContext {
 
+    // used netty fast theadLocal
     private static final FastThreadLocal<WebContext> fastThreadLocal = new FastThreadLocal<>();
 
     private Request request;
     private Response response;
+    private SessionManager sessionManager;
 
-    public WebContext(Request request, Response response) {
+    public WebContext(SessionManager sessionManager, Request request, Response response) {
+        this.sessionManager = sessionManager;
         this.request = request;
         this.response = response;
     }
@@ -42,4 +48,8 @@ public class WebContext {
         return null != webContext ? webContext.response : null;
     }
 
+    public static SessionManager sessionManager() {
+        WebContext webContext = get();
+        return null != webContext ? webContext.sessionManager : null;
+    }
 }

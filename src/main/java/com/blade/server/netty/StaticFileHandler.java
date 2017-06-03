@@ -7,10 +7,12 @@ import com.blade.kit.StringKit;
 import com.blade.mvc.Const;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
-import com.blade.mvc.multipart.MIMEType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.DefaultFileRegion;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
@@ -29,7 +31,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -160,21 +161,8 @@ public class StaticFileHandler implements RequestHandler {
             lastContentFuture = sendFileFuture;
         }
 
-        sendFileFuture.addListener(new ChannelProgressiveFutureListener() {
-            @Override
-            public void operationProgressed(ChannelProgressiveFuture future, long progress, long total) {
-                if (total < 0) { // total unknown
-                    log.debug(future.channel() + " Transfer progress: " + progress);
-                } else {
-                    log.debug(future.channel() + " Transfer progress: " + progress + " / " + total);
-                }
-            }
+        sendFileFuture.addListener(FileProgressiveFutureListener.build(raf));
 
-            @Override
-            public void operationComplete(ChannelProgressiveFuture future) {
-                log.debug(future.channel() + " Transfer complete.");
-            }
-        });
         // Decide whether to close the connection or not.
         if (!request.keepAlive()) {
             lastContentFuture.addListener(ChannelFutureListener.CLOSE);

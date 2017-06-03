@@ -159,7 +159,7 @@ public class WebServer {
 
     private void loadConfig() {
         String bootConf = blade.bootConf();
-        this.environment = Environment.load(bootConf);
+        this.environment = Environment.of(bootConf);
         blade.register(environment);
     }
 

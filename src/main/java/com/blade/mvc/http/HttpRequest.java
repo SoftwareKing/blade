@@ -13,11 +13,13 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.multipart.*;
 import io.netty.util.CharsetUtil;
+import org.omg.CORBA.CTX_RESTRICT_SCOPE;
 
 import java.io.IOException;
 import java.net.URLConnection;
 import java.util.*;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
 import static io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
 
@@ -271,7 +273,7 @@ public class HttpRequest implements Request {
 
     @Override
     public String contentType() {
-        return header("Content-Type");
+        return header(CONTENT_TYPE);
     }
 
     @Override
@@ -286,7 +288,8 @@ public class HttpRequest implements Request {
 
     @Override
     public boolean isIE() {
-        return userAgent().contains("MSIE");
+        String ua = userAgent();
+        return ua.contains("MSIE") || ua.contains("TRIDENT");
     }
 
     @Override

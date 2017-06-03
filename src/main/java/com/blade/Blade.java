@@ -36,6 +36,7 @@ public class Blade {
     public static final String VER = "2.0.0-SNAPSHOT";
     private String appName = "blade";
     private int port = 9000;
+
     private boolean fileList = false;
     private boolean gzipEnable = false;
     private boolean started = false;

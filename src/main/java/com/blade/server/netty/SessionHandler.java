@@ -26,7 +26,6 @@ public class SessionHandler implements RequestHandler {
         if (null == session) {
             createSession(request, response);
         } else {
-            System.out.println(session.expired());
             if (session.expired() < Instant.now().getEpochSecond()) {
                 removeSession(session, response);
             }

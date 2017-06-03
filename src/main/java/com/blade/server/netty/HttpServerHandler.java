@@ -10,6 +10,8 @@ import com.blade.mvc.RouteHandler;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
 import com.blade.mvc.http.*;
+import com.blade.mvc.http.HttpRequest;
+import com.blade.mvc.http.HttpResponse;
 import com.blade.mvc.route.Route;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.DefaultUI;
@@ -19,10 +21,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,38 +89,40 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         String uri = PathKit.getRelativePath(request.uri(), request.contextPath());
         log.debug("{}\t{}\t{}", request.protocol(), request.method(), uri);
 
-        // 判断是否是静态资源
         try {
             if (isStaticFile(uri)) {
                 staticFileHandler.handle(ctx, request, response);
             } else {
 
+                // execute session
                 sessionHandler.handle(ctx, request, response);
 
-                WebContext.set(new WebContext(request, response));
+                WebContext.set(new WebContext(sessionManager, request, response));
 
                 // web hook
                 int interrupts = routeMatcher.getBefore(uri).stream()
                         .mapToInt(route -> this.invokeHook(request, response, route)).sum();
 
-                if (interrupts == 0) {
-                    Route route = routeMatcher.lookupRoute(request.method(), uri);
-                    if (null != route) {
-                        request.initPathParams(route.getPathParams());
-                        // execute
-                        this.routeHandle(request, response, route);
-                        routeMatcher.getAfter(uri).forEach(r -> this.invokeHook(request, response, r));
-                        if (!response.isCommit()) {
-                            FullHttpResponse httpResponse = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.EMPTY_BUFFER);
-                            httpResponse.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
-                            httpResponse.headers().set(DATE, DateKit.gmtDate());
-                            httpResponse.headers().setInt(CONTENT_LENGTH, 0);
-                            ctx.writeAndFlush(httpResponse);
-                        }
-                    } else {
-                        // 404
-                        sendError(ctx, NOT_FOUND, String.format(DefaultUI.VIEW_404, uri));
-                    }
+                if (interrupts > 0) {
+                    return;
+                }
+                Route route = routeMatcher.lookupRoute(request.method(), uri);
+                if (null == route) {
+                    // 404
+                    sendError(ctx, NOT_FOUND, String.format(DefaultUI.VIEW_404, uri));
+                    return;
+                }
+
+                request.initPathParams(route.getPathParams());
+                // execute
+                this.routeHandle(request, response, route);
+                routeMatcher.getAfter(uri).forEach(r -> this.invokeHook(request, response, r));
+                if (!response.isCommit()) {
+//                    FullHttpResponse httpResponse = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.EMPTY_BUFFER);
+//                    httpResponse.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
+//                    httpResponse.headers().set(DATE, DateKit.gmtDate());
+//                    httpResponse.headers().setInt(CONTENT_LENGTH, 0);
+                    ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
                 }
                 WebContext.remove();
             }
