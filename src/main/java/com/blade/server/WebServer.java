@@ -2,7 +2,6 @@ package com.blade.server;
 
 import com.blade.Blade;
 import com.blade.Environment;
-import com.blade.banner.BannerStarter;
 import com.blade.ioc.BeanDefine;
 import com.blade.ioc.DynamicContext;
 import com.blade.ioc.Ioc;
@@ -193,7 +192,7 @@ public class WebServer {
             }
         }
 
-        BannerStarter.printStart();
+        DefaultUI.printBanner();
 
         if (blade.openMonitor()) {
             DefaultUI.registerStatus(blade);
