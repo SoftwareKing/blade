@@ -1,8 +1,8 @@
 package com.blade.mvc.handler;
 
 import com.blade.BladeException;
+import com.blade.kit.AsmKit;
 import com.blade.kit.JsonKit;
-import com.blade.kit.MethodParamNamesKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
 import com.blade.mvc.annotation.*;
@@ -18,7 +18,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -26,13 +25,14 @@ public final class MethodArgument {
 
     public static Object[] getArgs(Request request, Response response, Method actionMethod) throws Exception {
         actionMethod.setAccessible(true);
+
         Parameter[] parameters = actionMethod.getParameters();
         Object[] args = new Object[parameters.length];
-        List<String> paramaterNames = MethodParamNamesKit.getParamNames(actionMethod);
+        String[] paramaterNames = AsmKit.getMethodParamNames(actionMethod);
 
         for (int i = 0, len = parameters.length; i < len; i++) {
             Parameter parameter = parameters[i];
-            String paramName = paramaterNames.get(i);
+            String paramName = paramaterNames[i];
             int annoLen = parameter.getAnnotations().length;
             Class<?> argType = parameter.getType();
             if (annoLen > 0) {

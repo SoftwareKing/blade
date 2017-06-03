@@ -2,8 +2,6 @@ package com.blade.mvc.multipart;
 
 import com.blade.kit.ason.AsonIgnore;
 
-import java.io.File;
-
 /**
  * HTTP multipart/form-data Request
  *
@@ -18,14 +16,13 @@ public class FileItem {
     private long length;
 
     @AsonIgnore
-    private File file;
+    private byte[] data;
 
-    public FileItem(String name, String fileName, String contentType, long length, File file) {
+    public FileItem(String name, String fileName, String contentType, long length) {
         this.name = name;
         this.fileName = fileName;
         this.contentType = contentType;
         this.length = length;
-        this.file = file;
     }
 
     public String name() {
@@ -44,8 +41,12 @@ public class FileItem {
         return length;
     }
 
-    public File file() {
-        return file;
+    public byte[] data() {
+        return data;
+    }
+
+    public void data(byte[] data) {
+        this.data = data;
     }
 
     @Override

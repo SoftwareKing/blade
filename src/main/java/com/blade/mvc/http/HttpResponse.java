@@ -12,7 +12,6 @@ import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.template.TemplateEngine;
 import com.blade.server.ProgressiveFutureListener;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -26,13 +25,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.io.RandomAccessFile;
-import java.io.Writer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.io.StringWriter;
+import java.util.*;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -169,6 +164,16 @@ public class HttpResponse implements Response {
     }
 
     @Override
+    public Response removeCookie(String name) {
+        Optional<Cookie> cookieOpt = this.cookies.stream().filter(cookie -> cookie.name().equals(name)).findFirst();
+        cookieOpt.ifPresent(cookie -> {
+            cookie.setValue("");
+            cookie.setMaxAge(-1);
+        });
+        return this;
+    }
+
+    @Override
     public Map<String, String> cookies() {
         Map<String, String> map = new HashMap<>();
         this.cookies.forEach(cookie -> map.put(cookie.name(), cookie.value()));
@@ -200,6 +205,12 @@ public class HttpResponse implements Response {
     @Override
     public void json(Object bean) {
         this.json(JsonKit.toString(bean));
+    }
+
+    @Override
+    public void body(String data) {
+        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(data, CharsetUtil.UTF_8));
+        this.send(response);
     }
 
     @Override
@@ -248,9 +259,9 @@ public class HttpResponse implements Response {
 
     @Override
     public void render(ModelAndView modelAndView) {
-        ByteBuf buffer = Unpooled.buffer();
-        Writer writer = new PrintWriter(new ByteBufOutputStream(buffer));
-        templateEngine.render(modelAndView, writer);
+        StringWriter sw = new StringWriter();
+        templateEngine.render(modelAndView, sw);
+        ByteBuf buffer = Unpooled.wrappedBuffer(sw.toString().getBytes());
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), buffer);
         this.send(response);
     }

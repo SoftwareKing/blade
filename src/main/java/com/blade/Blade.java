@@ -47,6 +47,7 @@ public class Blade {
     private String bootConf = "classpath:app.properties";
     private RouteMatcher routeMatcher = new RouteMatcher();
     private WebServer webServer = new WebServer();
+    private Class<?> bootClass;
 
     private Set<String> pkgs = new LinkedHashSet<>(Arrays.asList(Const.PLUGIN_PACKAGE_NAME));
 
@@ -164,6 +165,10 @@ public class Blade {
         return this;
     }
 
+    public Class<?> bootClass() {
+        return this.bootClass;
+    }
+
     public Blade openMonitor(boolean openMonitor) {
         this.openMonitor = openMonitor;
         return this;
@@ -249,12 +254,13 @@ public class Blade {
         return this.start(mainCls, address, port, args);
     }
 
-    public Blade start(Class<?> mainCls, String address, int port, String... args) {
+    public Blade start(Class<?> bootClass, String address, int port, String... args) {
         try {
+            this.bootClass = bootClass;
             eventManager.fireEvent(Event.Type.SERVER_STARTING, this);
             Thread thread = new Thread(() -> {
                 try {
-                    webServer.initAndStart(Blade.this, args, mainCls);
+                    webServer.initAndStart(Blade.this, args);
                     latch.countDown();
                     webServer.join();
                 } catch (Exception e) {

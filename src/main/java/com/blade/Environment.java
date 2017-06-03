@@ -171,6 +171,21 @@ public class Environment {
         return this;
     }
 
+    public Environment add(String key, String value) {
+        props.setProperty(key, value);
+        return this;
+    }
+
+    public Environment addAll(Map<String, String> map) {
+        map.forEach((key, value) -> this.props.setProperty(key, value));
+        return this;
+    }
+
+    public Environment addAll(Properties props) {
+        props.forEach((key, value) -> this.props.setProperty(key.toString(), value.toString()));
+        return this;
+    }
+
     public Optional<String> get(String key) {
         return Optional.ofNullable(props.getProperty(key));
     }
@@ -212,6 +227,13 @@ public class Environment {
             return Optional.of(Boolean.valueOf(get(key).get()));
         }
         return Optional.empty();
+    }
+
+    public Boolean getBoolean(String key, boolean defaultValue) {
+        if (get(key).isPresent()) {
+            return Boolean.valueOf(get(key).get());
+        }
+        return defaultValue;
     }
 
     public Optional<Double> getDouble(String key) {

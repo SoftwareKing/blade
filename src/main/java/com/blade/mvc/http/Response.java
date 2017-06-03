@@ -1,6 +1,7 @@
 package com.blade.mvc.http;
 
 import com.blade.mvc.ui.ModelAndView;
+import com.blade.mvc.ui.RestResponse;
 
 import java.io.File;
 import java.util.Map;
@@ -119,6 +120,14 @@ public interface Response {
     Response cookie(String path, String name, String value, int maxAge, boolean secured);
 
     /**
+     * remove cookie
+     *
+     * @param name
+     * @return
+     */
+    Response removeCookie(String name);
+
+    /**
      * @return return response cookies
      */
     Map<String, String> cookies();
@@ -154,6 +163,13 @@ public interface Response {
      * @return
      */
     void json(Object bean);
+
+    /**
+     * send body to client
+     *
+     * @param data
+     */
+    void body(String data);
 
     /**
      * download some file to clinet

@@ -17,6 +17,7 @@ import io.netty.util.CharsetUtil;
 
 import java.io.IOException;
 import java.net.URLConnection;
+import java.nio.file.Files;
 import java.util.*;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -29,7 +30,21 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.*;
  */
 public class HttpRequest implements Request {
 
-    private static final HttpDataFactory HTTP_DATA_FACTORY = new DefaultHttpDataFactory(true);
+    // 5MB
+//    private static final HttpDataFactory HTTP_DATA_FACTORY = new DefaultHttpDataFactory(true);
+    private static final HttpDataFactory HTTP_DATA_FACTORY = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE); // Disk if size exceed
+
+    static {
+        DiskFileUpload.deleteOnExitTemporaryFile = true; // should delete file
+        // on exit (in normal
+        // exit)
+        DiskFileUpload.baseDirectory = null; // system temp directory
+        DiskAttribute.deleteOnExitTemporaryFile = true; // should delete file on
+        // exit (in normal exit)
+        DiskAttribute.baseDirectory = null; // system temp directory
+    }
+
+    private HttpPostRequestDecoder decoder;
 
     private ByteBuf body;
 
@@ -80,15 +95,32 @@ public class HttpRequest implements Request {
                     Attribute attribute = (Attribute) data;
                     String name = attribute.getName();
                     String value = attribute.getValue();
-                    this.parameters.put(data.getName(), Arrays.asList(value));
+                    this.parameters.put(name, Arrays.asList(value));
                     break;
                 case FileUpload:
                     FileUpload fileUpload = (FileUpload) data;
                     if (fileUpload.isCompleted()) {
-                        String contentType = URLConnection.guessContentTypeFromName(fileUpload.getFilename());
-                        FileItem fileItem = new FileItem(fileUpload.getName(), fileUpload.getFilename(),
-                                contentType, fileUpload.length(), fileUpload.getFile());
-                        fileItems.put(fileUpload.getName(), fileItem);
+                        String contentType = StringKit.mimeType(fileUpload.getFilename());
+                        if (null == contentType) {
+                            contentType = URLConnection.guessContentTypeFromName(fileUpload.getFilename());
+                        }
+
+                        if (fileUpload.isInMemory()) {
+                            FileItem fileItem = new FileItem(fileUpload.getName(), fileUpload.getFilename(),
+                                    contentType, fileUpload.length());
+
+                            fileItem.data(fileUpload.getByteBuf().array());
+                            fileItems.put(fileItem.name(), fileItem);
+                        } else {
+                            FileItem fileItem = new FileItem(fileUpload.getName(), fileUpload.getFilename(),
+                                    contentType, fileUpload.length());
+
+                            byte[] bytes = Files.readAllBytes(fileUpload.getFile().toPath());
+                            fileItem.data(bytes);
+
+                            fileItems.put(fileItem.name(), fileItem);
+                        }
+
                     }
                     break;
                 default:

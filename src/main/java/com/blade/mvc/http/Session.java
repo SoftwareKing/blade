@@ -13,6 +13,8 @@ public interface Session {
 
     String id();
 
+    <T> T attribute(String name);
+
     void attribute(String name, Object value);
 
     Map<String, Object> attributes();

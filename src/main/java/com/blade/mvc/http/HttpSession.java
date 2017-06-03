@@ -37,6 +37,12 @@ public class HttpSession implements Session {
     }
 
     @Override
+    public <T> T attribute(String name) {
+        Object object = this.attrs.get(name);
+        return null != object ? (T) object : null;
+    }
+
+    @Override
     public void attribute(String name, Object value) {
         this.attrs.put(name, value);
     }

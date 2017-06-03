@@ -1,5 +1,6 @@
 package com.blade.kit;
 
+import com.blade.ioc.annotation.Inject;
 import com.blade.mvc.Const;
 
 import java.time.Instant;
@@ -37,7 +38,7 @@ public final class DateKit {
      * @param pattern
      * @return
      */
-    public static String toUnix(long unixTime, String pattern) {
+    public static String toString(long unixTime, String pattern) {
         return Instant.ofEpochSecond(unixTime).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(pattern));
     }
 
@@ -56,6 +57,10 @@ public final class DateKit {
         return date.format(DateTimeFormatter.ofPattern(pattern));
     }
 
+    public static String toString(LocalDateTime time) {
+        return toString(time, "yyyy-MM-dd HH:mm:ss");
+    }
+
     /**
      * format string time to unix time
      *
@@ -66,7 +71,6 @@ public final class DateKit {
     public static int toUnix(String time, String pattern) {
         LocalDateTime formatted = LocalDateTime.parse(time, DateTimeFormatter.ofPattern(pattern));
         return (int) formatted.atZone(ZoneId.systemDefault()).toInstant().getEpochSecond();
-
     }
 
     /**
@@ -88,6 +92,10 @@ public final class DateKit {
         return Date.from(formatted.atZone(ZoneId.systemDefault()).toInstant());
     }
 
+    public static Date toDate(long unixTime) {
+        return Date.from(Instant.ofEpochSecond(unixTime));
+    }
+
     public static String gmtDate() {
         ZoneId zone = ZoneId.of("GMT");
         return DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US).format(LocalDateTime.now().atZone(zone));
@@ -102,10 +110,6 @@ public final class DateKit {
         ZoneId zone = ZoneId.of("GMT");
         return DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US).format(LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()).atZone(zone));
 
-    }
-
-    public static String toString(LocalDateTime time) {
-        return toString(time, "yyyy-MM-dd HH:mm:ss");
     }
 
 }

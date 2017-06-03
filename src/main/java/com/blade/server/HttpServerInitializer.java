@@ -39,7 +39,9 @@ public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
             p.addLast(sslCtx.newHandler(ch.alloc()));
         }
 
-        p.addLast(new ChannelTrafficCounter(0, ci));
+        if (blade.openMonitor()) {
+            p.addLast(new ChannelTrafficCounter(0, ci));
+        }
 
         if (blade.gzip()) {
             p.addLast(new HttpContentCompressor());

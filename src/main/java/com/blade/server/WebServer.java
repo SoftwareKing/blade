@@ -11,6 +11,7 @@ import com.blade.ioc.annotation.Bean;
 import com.blade.ioc.reader.ClassInfo;
 import com.blade.kit.BladeKit;
 import com.blade.kit.ReflectKit;
+import com.blade.kit.StringKit;
 import com.blade.lifecycle.BeanProcessor;
 import com.blade.lifecycle.Event;
 import com.blade.lifecycle.StartedEvent;
@@ -52,7 +53,7 @@ public class WebServer {
 
     private RouteBuilder routeBuilder;
 
-    public void initAndStart(Blade blade, String[] args, Class<?> mainCls) throws Exception {
+    public void initAndStart(Blade blade, String[] args) throws Exception {
         this.blade = blade;
 
         long initStart = System.currentTimeMillis();
@@ -64,17 +65,19 @@ public class WebServer {
         log.info("Blade environment: classpath\t\t=> {}", CLASSPATH);
 
         try {
+
             // 1. 加载配置
             this.loadConfig();
 
             // 2. 初始化系统配置
-            this.initConfig(mainCls);
+            this.initConfig();
+
+            WebContext.init(blade, "/", false);
 
             // 3. 初始化ioc
             this.initIoc();
 
             // 4. 执行beanprocessor、启动事件
-            beanProcessors.stream().sorted(new OrderComparator<>()).forEach(b -> b.processor(blade));
             startedEvents.forEach(e -> blade.event(Event.Type.SERVER_STARTED, e));
 
             // 5. 启动web服务
@@ -96,6 +99,8 @@ public class WebServer {
 
         routeMatcher.register();
 
+        beanProcessors.stream().sorted(new OrderComparator<>()).forEach(b -> b.prev(blade));
+
         Ioc ioc = blade.ioc();
         if (BladeKit.isNotEmpty(ioc.getBeans())) {
             log.info("Register bean: {}", ioc.getBeans());
@@ -105,6 +110,9 @@ public class WebServer {
         if (BladeKit.isNotEmpty(beanDefines)) {
             beanDefines.forEach(b -> BladeKit.injection(ioc, b));
         }
+
+        beanProcessors.stream().sorted(new OrderComparator<>()).forEach(b -> b.processor(blade));
+
     }
 
     private void startServer(long startTime) throws Exception {
@@ -131,8 +139,6 @@ public class WebServer {
         log.info("{} initialize successfully, Time elapsed: {} ms.", appName, System.currentTimeMillis() - startTime);
         log.info("Blade start with {}:{}", address, port);
         log.info("Open your web browser and navigate to {}://{}:{}", (SSL ? "https" : "http"), address.replace("0.0.0.0", "127.0.0.1"), port);
-
-        WebContext.init(blade, "/", SSL);
 
         blade.eventManager().fireEvent(Event.Type.SERVER_STARTED, blade);
     }
@@ -162,16 +168,28 @@ public class WebServer {
     }
 
     private void loadConfig() {
+
         String bootConf = blade.bootConf();
         this.environment = Environment.of(bootConf);
         blade.register(environment);
+
+        String page404 = environment.get("mvc.view.404", "");
+        String page500 = environment.get("mvc.view.500", "");
+        String statics = environment.get("mvc.statics", "");
+        if (StringKit.isNotBlank(statics)) {
+            blade.addStatics(statics.split(","));
+        }
+
+        boolean devMode = environment.getBoolean("app.dev", true);
+        blade.devMode(devMode);
+
     }
 
-    private void initConfig(Class<?> mainCls) {
+    private void initConfig() {
 
-        if (null != mainCls) {
+        if (null != blade.bootClass()) {
             if (blade.scanPackages().size() == 1 && blade.scanPackages().contains(Const.PLUGIN_PACKAGE_NAME)) {
-                blade.scanPackages(mainCls.getPackage().getName());
+                blade.scanPackages(blade.bootClass().getPackage().getName());
             }
         }
 
