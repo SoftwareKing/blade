@@ -14,6 +14,11 @@ import java.util.Map;
 public interface Response {
 
     /**
+     * @return return response status code
+     */
+    int statusCode();
+
+    /**
      * Setting Response Status
      *
      * @param status status code
@@ -112,6 +117,11 @@ public interface Response {
      * @return Return Response
      */
     Response cookie(String path, String name, String value, int maxAge, boolean secured);
+
+    /**
+     * @return return response cookies
+     */
+    Map<String, String> cookies();
 
     /**
      * Render by text

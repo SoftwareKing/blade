@@ -9,7 +9,7 @@ import com.blade.mvc.Const;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.template.TemplateEngine;
-import com.blade.server.netty.FileProgressiveFutureListener;
+import com.blade.server.ProgressiveFutureListener;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
@@ -62,6 +62,11 @@ public class HttpResponse implements Response {
     public HttpResponse(ChannelHandlerContext ctx, TemplateEngine templateEngine) {
         this.ctx = ctx;
         this.templateEngine = templateEngine;
+    }
+
+    @Override
+    public int statusCode() {
+        return this.statusCode;
     }
 
     @Override
@@ -163,6 +168,13 @@ public class HttpResponse implements Response {
     }
 
     @Override
+    public Map<String, String> cookies() {
+        Map<String, String> map = new HashMap<>();
+        this.cookies.forEach(cookie -> map.put(cookie.name(), cookie.value()));
+        return map;
+    }
+
+    @Override
     public void text(String text) {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(text, CharsetUtil.UTF_8));
         this.contentType = Const.CONTENT_TYPE_TEXT;
@@ -178,8 +190,7 @@ public class HttpResponse implements Response {
     @Override
     public void json(String json) {
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(json, CharsetUtil.UTF_8));
-        String userAgent = WebContext.request().userAgent();
-        if (!userAgent.contains("MSIE")) {
+        if (!WebContext.request().isIE()) {
             this.contentType = Const.CONTENT_TYPE_JSON;
         }
         this.send(response);
@@ -218,7 +229,7 @@ public class HttpResponse implements Response {
             // Write the end marker.
             ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
 
-            sendFileFuture.addListener(FileProgressiveFutureListener.build(raf));
+            sendFileFuture.addListener(ProgressiveFutureListener.build(raf));
             // Decide whether to close the connection or not.
             if (!keepAlive) {
                 lastContentFuture.addListener(ChannelFutureListener.CLOSE);
@@ -260,12 +271,16 @@ public class HttpResponse implements Response {
     }
 
     private void send(FullHttpResponse response) {
-        HttpHeaders httpHeaders = response.headers().add(getDefaultHeader());
-        httpHeaders.setInt(CONTENT_LENGTH, response.content().readableBytes());
+        response.headers().add(getDefaultHeader());
         boolean keepAlive = WebContext.request().keepAlive();
         if (!keepAlive) {
-            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+            // If keep-alive is off, close the connection once the content is fully written.
+            ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
         } else {
+            // Add 'Content-Length' header only for a keep-alive connection.
+            response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
+            // Add keep alive header as per:
+            // - http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
             response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
             ctx.writeAndFlush(response);
         }

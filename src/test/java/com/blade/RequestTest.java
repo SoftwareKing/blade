@@ -3,7 +3,6 @@ package com.blade;
 import com.blade.kit.Assert;
 import com.blade.kit.ason.Ason;
 import com.blade.mvc.Const;
-import com.github.kevinsawicki.http.HttpRequest;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -15,7 +14,7 @@ import static org.hamcrest.Matchers.is;
 
 
 /**
- * Request TestCase
+ * HttpRequest TestCase
  *
  * @author biezhi
  *         2017/6/3
@@ -25,20 +24,20 @@ public class RequestTest extends BaseTestCase {
     @Test
     public void testNullCookie() throws Exception {
         start(app.get("/cookie", (req, res) -> res.text(req.cookie("user-id").orElse("null"))));
-        assertThat(getBody("/cookie"), is("null"));
+        assertThat(bodyToString("/cookie"), is("null"));
     }
 
     @Test
     public void testSetCookie() throws Exception {
         start(app.get("/cookie", (req, res) -> res.text(req.cookie("user-id").orElse("null"))));
-        String body = HttpRequest.get(origin + "/cookie").header("Cookie", "user-id=221").body();
+        String body = get("/cookie").header("Cookie", "user-id=221").body();
         assertThat(body, is("221"));
     }
 
     @Test
     public void testGetCookies() throws Exception {
         start(app.get("/cookie", (req, res) -> res.json(req.cookies())));
-        String body = getBody("/cookie");
+        String body = bodyToString("/cookie");
         Ason ason = new Ason(body);
         Assert.notNull(ason.get(Const.SESSION_COOKIE_NAME), "session is null");
     }
@@ -46,7 +45,7 @@ public class RequestTest extends BaseTestCase {
     @Test
     public void testMultipleCookies() throws Exception {
         start(app.get("/cookie", (req, res) -> res.json(req.cookies())));
-        String body = HttpRequest.get(origin + "/cookie").header("Cookie", "c1=a;c2=b;c3=c").body();
+        String body = get("/cookie").header("Cookie", "c1=a;c2=b;c3=c").body();
         Ason ason = new Ason(body);
         assertThat(ason.get("c1"), is("a"));
         assertThat(ason.get("c2"), is("b"));
@@ -60,9 +59,9 @@ public class RequestTest extends BaseTestCase {
                         .get("/user2/:id", (req, res) -> res.text(req.pathLong("id").toString()))
                         .get("/user3/:name/:age", (req, res) -> res.text(req.pathString("name") + ":" + req.pathString("age")))
         );
-        assertThat(getBody("/user1/24"), is("24"));
-        assertThat(getBody("/user2/25"), is("25"));
-        assertThat(getBody("/user3/jack/18"), is("jack:18"));
+        assertThat(bodyToString("/user1/24"), is("24"));
+        assertThat(bodyToString("/user2/25"), is("25"));
+        assertThat(bodyToString("/user3/jack/18"), is("jack:18"));
     }
 
     @Test
@@ -72,11 +71,11 @@ public class RequestTest extends BaseTestCase {
                         .get("/user2/:name/:age", (req, res) -> res.json(req.pathParams()))
         );
 
-        String body1 = HttpRequest.get(origin + "/user1/10").body();
+        String body1 = get("/user1/10").body();
         Ason ason1 = new Ason(body1);
         assertThat(ason1.get("id"), is("10"));
 
-        String body2 = HttpRequest.get(origin + "/user2/biezhi/20").body();
+        String body2 = get("/user2/biezhi/20").body();
         Ason ason2 = new Ason(body2);
 
         assertThat(ason2.get("age"), is("20"));
@@ -88,7 +87,7 @@ public class RequestTest extends BaseTestCase {
         start(
                 app.get("/", (request, response) -> System.out.println(request.host()))
         );
-        getBody("/");
+        bodyToString("/");
     }
 
     @Test
@@ -98,9 +97,9 @@ public class RequestTest extends BaseTestCase {
                         .get("/a/b", (request, response) -> response.text(request.uri()))
                         .get("/a/b/c", (request, response) -> response.text(request.uri()))
         );
-        assertThat(getBody("/a"), is("/a"));
-        assertThat(getBody("/a/b"), is("/a/b"));
-        assertThat(getBody("/a/b/c?name=q1"), is("/a/b/c"));
+        assertThat(bodyToString("/a"), is("/a"));
+        assertThat(bodyToString("/a/b"), is("/a/b"));
+        assertThat(bodyToString("/a/b/c?name=q1"), is("/a/b/c"));
     }
 
     @Test
@@ -108,7 +107,7 @@ public class RequestTest extends BaseTestCase {
         start(
                 app.get("/hello", (request, response) -> response.text(request.url()))
         );
-        assertThat(getBody("/hello?name=q1"), is("/hello?name=q1"));
+        assertThat(bodyToString("/hello?name=q1"), is("/hello?name=q1"));
     }
 
     @Test
@@ -116,7 +115,7 @@ public class RequestTest extends BaseTestCase {
         start(
                 app.get("/", (request, response) -> response.text(request.userAgent()))
         );
-        String body = HttpRequest.get(origin + "/").userAgent(firefoxUA).body();
+        String body = get("/").userAgent(firefoxUA).body();
         assertThat(firefoxUA, is(firefoxUA));
     }
 
@@ -125,7 +124,7 @@ public class RequestTest extends BaseTestCase {
         start(
                 app.get("/", (request, response) -> response.text(request.protocol()))
         );
-        assertThat(getBody("/"), is("HTTP/1.1"));
+        assertThat(bodyToString("/"), is("HTTP/1.1"));
     }
 
     @Test
@@ -133,7 +132,7 @@ public class RequestTest extends BaseTestCase {
         start(
                 app.get("/hello", (request, response) -> response.text(request.queryString()))
         );
-        assertThat(getBody("/hello?name=q1"), is("/hello?name=q1"));
+        assertThat(bodyToString("/hello?name=q1"), is("/hello?name=q1"));
     }
 
     @Test
@@ -144,13 +143,13 @@ public class RequestTest extends BaseTestCase {
                         .get("/query2", (request, response) -> response.text(request.queryDouble("price", 10.2D) + ""))
         );
 
-        assertThat(getBody("/query?name=rose"), is("rose"));
-        assertThat(getBody("/query"), is("jack"));
-        assertThat(getBody("/query2?price=22.1"), is("22.1"));
-        assertThat(getBody("/query2"), is("10.2"));
+        assertThat(bodyToString("/query?name=rose"), is("rose"));
+        assertThat(bodyToString("/query"), is("jack"));
+        assertThat(bodyToString("/query2?price=22.1"), is("22.1"));
+        assertThat(bodyToString("/query2"), is("10.2"));
 
-        String tom = HttpRequest.post(origin + "/query?name=tom").body();
-        String biezhi = HttpRequest.post(origin + "/query").form("name", "biezhi").body();
+        String tom = post("/query?name=tom").body();
+        String biezhi = post("/query").form("name", "biezhi").body();
         assertThat(tom, is("tom"));
         assertThat(biezhi, is("biezhi"));
 
@@ -165,10 +164,10 @@ public class RequestTest extends BaseTestCase {
                         .delete("/", (request, response) -> response.text(request.method()))
         );
 
-        assertThat(HttpRequest.get(origin + "/").body(), is("GET"));
-        assertThat(HttpRequest.post(origin + "/").body(), is("POST"));
-        assertThat(HttpRequest.put(origin + "/").body(), is("PUT"));
-        assertThat(HttpRequest.delete(origin + "/").body(), is("DELETE"));
+        assertThat(bodyToString("/"), is("GET"));
+        assertThat(post("/").body(), is("POST"));
+        assertThat(put("/").body(), is("PUT"));
+        assertThat(delete("/").body(), is("DELETE"));
     }
 
     @Test
@@ -177,7 +176,7 @@ public class RequestTest extends BaseTestCase {
                 app.get("/", (request, response) -> response.text(request.address()))
         );
 
-        assertThat(getBody("/"), is("127.0.0.1"));
+        assertThat(bodyToString("/"), is("127.0.0.1"));
     }
 
     @Test
@@ -187,8 +186,8 @@ public class RequestTest extends BaseTestCase {
                         .get("/c2", (request, response) -> response.contentType("application/json; charset=UTF-8").text(response.contentType()))
         );
 
-        MatcherAssert.assertThat(getBody("/c1"), Matchers.is(Const.CONTENT_TYPE_HTML));
-        assertThat(getBody("/c2"), is(Const.CONTENT_TYPE_JSON));
+        MatcherAssert.assertThat(bodyToString("/c1"), Matchers.is(Const.CONTENT_TYPE_HTML));
+        assertThat(bodyToString("/c2"), is(Const.CONTENT_TYPE_JSON));
     }
 
     @Test
@@ -197,7 +196,7 @@ public class RequestTest extends BaseTestCase {
                 app.get("/", (request, response) -> response.text(request.isSecure() + ""))
         );
 
-        assertThat(getBody("/"), is("false"));
+        assertThat(bodyToString("/"), is("false"));
     }
 
     @Test
@@ -207,8 +206,8 @@ public class RequestTest extends BaseTestCase {
                         .get("/a2", (request, response) -> response.text(request.isAjax() + ""))
         );
 
-        assertThat(getBody("/a1"), is("false"));
-        assertThat(HttpRequest.get(origin + "/a2").header("x-requested-with", "XMLHttpRequest").body(), is("true"));
+        assertThat(bodyToString("/a1"), is("false"));
+        assertThat(get("/a2").header("x-requested-with", "XMLHttpRequest").body(), is("true"));
     }
 
     @Test
@@ -217,8 +216,8 @@ public class RequestTest extends BaseTestCase {
                 app.get("/", (request, response) -> response.text(request.isIE() + ""))
         );
 
-        assertThat(HttpRequest.get(origin + "/").userAgent(firefoxUA).body(), is("false"));
-        assertThat(HttpRequest.get(origin + "/").userAgent("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)").body(), is("true"));
+        assertThat(get("/").userAgent(firefoxUA).body(), is("false"));
+        assertThat(get("/").userAgent("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)").body(), is("true"));
     }
 
     @Test
@@ -227,7 +226,7 @@ public class RequestTest extends BaseTestCase {
                 app.get("/", (request, response) -> response.json(request.headers()))
         );
 
-        String body = HttpRequest.get(origin + "/")
+        String body = get("/")
                 .header("h1", "a1").header("h2", "a2").header("h3", "a3")
                 .body();
 
@@ -244,7 +243,7 @@ public class RequestTest extends BaseTestCase {
                 app.get("/", (request, response) -> response.json(request.header("h1")))
         );
 
-        String body = HttpRequest.get(origin + "/")
+        String body = get("/")
                 .header("h1", "a1").header("h2", "a2").header("h3", "a3")
                 .body();
 
@@ -257,8 +256,7 @@ public class RequestTest extends BaseTestCase {
                 app.get("/", (request, response) -> response.json(request.keepAlive() + ""))
         );
 
-        String body = HttpRequest.get(origin + "/").body();
-        assertThat(body, is("true"));
+        assertThat(bodyToString("/"), is("true"));
     }
 
     @Test
@@ -269,7 +267,7 @@ public class RequestTest extends BaseTestCase {
                             System.out.println(request.attribute("name").toString());
                         }))
         );
-        getBody("/");
+        bodyToString("/");
     }
 
     @Test
@@ -283,10 +281,10 @@ public class RequestTest extends BaseTestCase {
                         })
         );
 
-        String body = HttpRequest.post(origin + "/upload1").part("file1", "a.java", new File(Const.CLASSPATH + "log_config.txt")).body();
+        String body = post("/upload1").part("file1", "a.java", new File(Const.CLASSPATH + "log_config.txt")).body();
         assertThat(body, is("{\"file1\":{\"fileName\":\"a.java\",\"name\":\"file1\",\"length\":1551,\"contentType\":\"text/plain\"}}"));
 
-        body = HttpRequest.post(origin + "/upload2").part("file1", "a.java", new File(Const.CLASSPATH + "log_config.txt")).body();
+        body = post("/upload2").part("file1", "a.java", new File(Const.CLASSPATH + "log_config.txt")).body();
         assertThat(body, is("{\"fileName\":\"a.java\",\"name\":\"file1\",\"length\":1551,\"contentType\":\"text/plain\"}"));
     }
 

@@ -1,4 +1,4 @@
-package com.blade.server.netty;
+package com.blade.server;
 
 import com.blade.Blade;
 import com.blade.Environment;
@@ -19,6 +19,7 @@ import com.blade.mvc.annotation.Path;
 import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.route.RouteBuilder;
 import com.blade.mvc.route.RouteMatcher;
+import com.blade.mvc.ui.DefaultUI;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -164,13 +165,17 @@ public class WebServer {
     }
 
     private void initConfig(Class<?> mainCls) {
-        BannerStarter.printStart();
-        if (null == mainCls) {
-            return;
+
+        if (null != mainCls) {
+            if (blade.scanPackages().size() == 1 && blade.scanPackages().contains(Const.PLUGIN_PACKAGE_NAME)) {
+                blade.scanPackages(mainCls.getPackage().getName());
+            }
         }
 
-        if (blade.scanPackages().size() == 1 && blade.scanPackages().contains(Const.PLUGIN_PACKAGE_NAME)) {
-            blade.scanPackages(mainCls.getPackage().getName());
+        BannerStarter.printStart();
+
+        if (blade.openMonitor()) {
+            DefaultUI.registerStatus(blade);
         }
 
     }

@@ -12,7 +12,7 @@ import com.blade.mvc.http.SessionManager;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.template.DefaultEngine;
 import com.blade.mvc.ui.template.TemplateEngine;
-import com.blade.server.netty.WebServer;
+import com.blade.server.WebServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +41,7 @@ public class Blade {
     private boolean gzipEnable = false;
     private boolean started = false;
     private boolean devMode = true;
+    private boolean openMonitor = true;
 
     private String address = "0.0.0.0";
     private String bootConf = "classpath:app.properties";
@@ -157,7 +158,19 @@ public class Blade {
 
     public Blade devMode(boolean devMode) {
         this.devMode = devMode;
+        if (!devMode) {
+            this.openMonitor = false;
+        }
         return this;
+    }
+
+    public Blade openMonitor(boolean openMonitor) {
+        this.openMonitor = openMonitor;
+        return this;
+    }
+
+    public boolean openMonitor() {
+        return this.openMonitor;
     }
 
     public Set<String> getStatics() {
@@ -221,6 +234,11 @@ public class Blade {
 
     public SessionManager sessionManager() {
         return sessionManager;
+    }
+
+    public Blade closeSessoin() {
+        this.sessionManager = null;
+        return this;
     }
 
     public Blade start() {

@@ -74,7 +74,7 @@ public class IndexController {
     }
 
     @GetRoute(values = "download")
-    public void download(Response response) {
+    public void download(Response response) throws Exception {
         String path = Const.CLASSPATH + "static/a.txt";
         response.donwload("文件.txt", new File(path));
     }

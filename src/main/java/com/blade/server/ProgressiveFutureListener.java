@@ -1,4 +1,4 @@
-package com.blade.server.netty;
+package com.blade.server;
 
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.ChannelProgressiveFutureListener;
@@ -7,13 +7,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.RandomAccessFile;
 
-public class FileProgressiveFutureListener implements ChannelProgressiveFutureListener {
+public class ProgressiveFutureListener implements ChannelProgressiveFutureListener {
 
-    private static final Logger log = LoggerFactory.getLogger(FileProgressiveFutureListener.class);
+    private static final Logger log = LoggerFactory.getLogger(ProgressiveFutureListener.class);
 
     private RandomAccessFile raf;
 
-    public FileProgressiveFutureListener(RandomAccessFile raf) {
+    public ProgressiveFutureListener(RandomAccessFile raf) {
         this.raf = raf;
     }
 
@@ -36,8 +36,8 @@ public class FileProgressiveFutureListener implements ChannelProgressiveFutureLi
         }
     }
 
-    public static FileProgressiveFutureListener build(RandomAccessFile raf) {
-        return new FileProgressiveFutureListener(raf);
+    public static ProgressiveFutureListener build(RandomAccessFile raf) {
+        return new ProgressiveFutureListener(raf);
     }
 
 }

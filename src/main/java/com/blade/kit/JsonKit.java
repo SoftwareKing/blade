@@ -2,6 +2,9 @@ package com.blade.kit;
 
 import com.blade.kit.ason.Ason;
 
+import java.util.AbstractList;
+import java.util.List;
+
 /**
  * @author biezhi
  *         2017/6/2
@@ -12,6 +15,16 @@ public final class JsonKit {
     }
 
     public static String toString(Object object) {
+        Class<?> cls = object.getClass();
+        if (cls.isArray()) {
+            return Ason.serializeArray(object).toString();
+        }
+        if (ReflectKit.hasInterface(cls, List.class)) {
+            return Ason.serializeList((List<? extends Object>) object).toString();
+        }
+        if (cls.getSuperclass().equals(AbstractList.class)) {
+            return Ason.serializeList((List<? extends Object>) object).toString();
+        }
         return Ason.serialize(object).toString();
     }
 

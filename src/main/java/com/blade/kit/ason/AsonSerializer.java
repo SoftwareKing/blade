@@ -37,8 +37,6 @@ public class AsonSerializer {
     //
     ////// SERIALIZE
     //
-
-
     public Ason serialize(Object object) {
         if (Util.isNull(object)) {
             return null;

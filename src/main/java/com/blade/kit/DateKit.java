@@ -52,6 +52,10 @@ public final class DateKit {
         return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(pattern));
     }
 
+    public static String toString(LocalDateTime date, String pattern) {
+        return date.format(DateTimeFormatter.ofPattern(pattern));
+    }
+
     /**
      * format string time to unix time
      *
@@ -98,6 +102,10 @@ public final class DateKit {
         ZoneId zone = ZoneId.of("GMT");
         return DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US).format(LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()).atZone(zone));
 
+    }
+
+    public static String toString(LocalDateTime time) {
+        return toString(time, "yyyy-MM-dd HH:mm:ss");
     }
 
 }

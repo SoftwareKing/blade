@@ -1,10 +1,11 @@
-package com.blade.server.netty;
+package com.blade.server;
 
 import com.blade.Blade;
 import com.blade.BladeException;
-import com.blade.ioc.Ioc;
 import com.blade.kit.DateKit;
 import com.blade.kit.StringKit;
+import com.blade.metric.Connection;
+import com.blade.metric.WebStatistics;
 import com.blade.mvc.Const;
 import com.blade.mvc.RouteHandler;
 import com.blade.mvc.WebContext;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
@@ -51,17 +53,44 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     private Set<String> statics;
 
     private StaticFileHandler staticFileHandler;
-
     private SessionHandler sessionHandler;
 
-    public HttpServerHandler(Blade blade) {
+    private final WebStatistics statistics = WebStatistics.me();
+    private final Connection ci;
+
+    public HttpServerHandler(Blade blade, Connection ci) {
         this.blade = blade;
         this.statics = blade.getStatics();
+
+        this.ci = ci;
 
         this.routeMatcher = blade.routeMatcher();
         this.routeViewResolve = new RouteViewResolve(blade);
         this.staticFileHandler = new StaticFileHandler(blade);
-        this.sessionHandler = new SessionHandler(blade.sessionManager());
+        this.sessionHandler = blade.sessionManager() != null ? new SessionHandler(blade.sessionManager()) : null;
+    }
+
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelRegistered(ctx);
+        statistics.addChannel(ctx.channel());
+    }
+
+    private FullHttpRequest fullHttpRequest;
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+        ctx.flush();
+        /* Writing response to request is over. Record request in WEB_STATISTICS */
+        statistics.registerRequestFromIp(WebStatistics.getIpFromChannel(ctx.channel()), LocalDateTime.now());
+        if (fullHttpRequest != null) {
+            ci.addUri(fullHttpRequest.getUri());
+        }
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        fullHttpRequest = null;
     }
 
     @Override
@@ -69,6 +98,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         if (is100ContinueExpected(fullHttpRequest)) {
             ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
+
+        this.fullHttpRequest = fullHttpRequest;
 
         Request request = new HttpRequest(ctx, fullHttpRequest);
         Response response = new HttpResponse(ctx, blade.templateEngine());
@@ -83,7 +114,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         }
 
         // execute session
-        SessionManager sessionManager = sessionHandler.handle(ctx, request, response);
+        SessionManager sessionManager = null != sessionHandler ? sessionHandler.handle(ctx, request, response) : null;
 
         WebContext.set(new WebContext(sessionManager, request, response));
 
@@ -125,11 +156,12 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             }
             StringWriter sw = new StringWriter();
             PrintWriter writer = new PrintWriter(sw);
-            writer.write(String.format(DefaultUI.HTML, cause.getClass() + " : " + cause.getMessage()));
+            writer.write(String.format(DefaultUI.ERROR_START, cause.getClass() + " : " + cause.getMessage()));
             writer.write("\r\n");
             cause.printStackTrace(writer);
-            writer.println(DefaultUI.END);
+            writer.println(DefaultUI.HTML_FOOTER);
             error = sw.toString();
+            sendError(ctx, INTERNAL_SERVER_ERROR, error);
             return;
         }
         sendError(ctx, INTERNAL_SERVER_ERROR);
@@ -198,7 +230,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         if (response.isCommit()) {
             return;
         }
-        FullHttpResponse httpResponse = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.EMPTY_BUFFER);
+        FullHttpResponse httpResponse = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(response.statusCode()), Unpooled.EMPTY_BUFFER);
         httpResponse.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
         httpResponse.headers().set(DATE, DateKit.gmtDate());
         httpResponse.headers().setInt(CONTENT_LENGTH, 0);

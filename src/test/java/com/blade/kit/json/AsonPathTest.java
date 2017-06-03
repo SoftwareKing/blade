@@ -151,9 +151,9 @@ public class AsonPathTest {
 
     @Test
     public void array_get_path_test() {
-        String input = "[{\"body\":\"Hello, world\",\"sender\":{\"name\":\"Aidan\",\"id\":2}}," +
-                "{\"body\":\"Hello, world\",\"sender\":{\"name\":\"Waverly\",\"id\":1}}," +
-                "{\"body\":\"Hello, world\",\"sender\":{\"name\":\"Jeff\",\"id\":3}}]";
+        String input = "[{\"bodyToString\":\"Hello, world\",\"sender\":{\"name\":\"Aidan\",\"id\":2}}," +
+                "{\"bodyToString\":\"Hello, world\",\"sender\":{\"name\":\"Waverly\",\"id\":1}}," +
+                "{\"bodyToString\":\"Hello, world\",\"sender\":{\"name\":\"Jeff\",\"id\":3}}]";
         AsonArray array = new AsonArray(input);
 
         assertEquals("Waverly", array.get(1, "sender.name"));

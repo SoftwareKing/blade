@@ -1,4 +1,4 @@
-package com.blade.server.netty;
+package com.blade.server;
 
 import com.blade.kit.UUID;
 import com.blade.mvc.Const;

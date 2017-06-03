@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
  * @author biezhi
  *         2017/6/2
  */
-public class BladeTemplateTest {
+public class DefaultTemplateTest {
 
     @Test
     public void testFormatSimpleArguments() throws Exception {

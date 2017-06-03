@@ -84,4 +84,10 @@ public class BladeKit {
         return null != c && !c.isEmpty();
     }
 
+    public static <K, V> Map<K, V> immutableEntry(K k, V v) {
+        Map<K, V> map = new HashMap<>();
+        map.put(k, v);
+        return map;
+    }
+
 }

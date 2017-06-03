@@ -1,4 +1,4 @@
-package com.blade.server.netty;
+package com.blade.server;
 
 import com.blade.Blade;
 import com.blade.kit.DateKit;
@@ -31,7 +31,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -162,7 +161,7 @@ public class StaticFileHandler implements RequestHandler<Boolean> {
             lastContentFuture = sendFileFuture;
         }
 
-        sendFileFuture.addListener(FileProgressiveFutureListener.build(raf));
+        sendFileFuture.addListener(ProgressiveFutureListener.build(raf));
 
         // Decide whether to close the connection or not.
         if (!request.keepAlive()) {

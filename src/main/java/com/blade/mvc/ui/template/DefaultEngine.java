@@ -7,7 +7,6 @@ import com.blade.mvc.WebContext;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Session;
 import com.blade.mvc.ui.ModelAndView;
-import com.blade.server.netty.WebServer;
 
 import java.io.File;
 import java.io.Writer;
