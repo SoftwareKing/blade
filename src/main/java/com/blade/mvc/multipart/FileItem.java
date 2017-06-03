@@ -1,5 +1,7 @@
 package com.blade.mvc.multipart;
 
+import com.blade.kit.ason.AsonIgnore;
+
 import java.io.File;
 
 /**
@@ -14,6 +16,8 @@ public class FileItem {
     private String fileName;
     private String contentType;
     private long length;
+
+    @AsonIgnore
     private File file;
 
     public FileItem(String name, String fileName, String contentType, long length, File file) {

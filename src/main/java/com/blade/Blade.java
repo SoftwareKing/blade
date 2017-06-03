@@ -6,7 +6,6 @@ import com.blade.lifecycle.Event;
 import com.blade.lifecycle.EventListener;
 import com.blade.lifecycle.EventManager;
 import com.blade.mvc.RouteHandler;
-import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.template.DefaultEngine;
@@ -61,10 +60,8 @@ public class Blade {
     private Blade() {
     }
 
-    private static final Blade INSTANCE = new Blade();
-
     public static Blade me() {
-        return INSTANCE;
+        return new Blade();
     }
 
     public Ioc ioc() {

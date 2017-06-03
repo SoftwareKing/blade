@@ -135,15 +135,15 @@ public final class MethodArgument {
 
     private static Object getHeader(Class<?> argType, HeaderParam headerParam, String paramName, Request request) {
         String key = StringKit.isBlank(headerParam.value()) ? paramName : headerParam.value();
-        Optional<String> val = request.header(key);
+        String val = request.header(key);
         boolean required = headerParam.required();
-        if (!val.isPresent()) {
-            val = Optional.of(headerParam.defaultValue());
+        if (StringKit.isBlank(val)) {
+            val = headerParam.defaultValue();
         }
-        if (required && !val.isPresent()) {
+        if (required && StringKit.isBlank(val)) {
             throw new BladeException("header param [" + paramName + "] not is empty.");
         }
-        return getRequestParam(argType, val.get());
+        return getRequestParam(argType, val);
     }
 
     private static Object getPathParam(Class<?> argType, PathParam pathParam, String paramName, Request request) {

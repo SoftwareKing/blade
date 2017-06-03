@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static com.blade.mvc.Const.CLASSPATH;
+
 /**
  * @author biezhi
  *         2017/5/31
@@ -39,8 +41,6 @@ import java.util.*;
 public class WebServer {
 
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
-
-    public static final String CLASSPATH = WebServer.class.getResource("/").getPath();
 
     private Blade blade;
     private String address;

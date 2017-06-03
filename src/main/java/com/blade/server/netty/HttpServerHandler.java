@@ -79,7 +79,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
-        Request request = new HttpRequest(fullHttpRequest);
+        Request request = new HttpRequest(ctx, fullHttpRequest);
         Response response = new HttpResponse(ctx, templateEngine);
         response.header(SERVER, "blade/" + Blade.VER);
 

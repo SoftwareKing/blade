@@ -1,4 +1,4 @@
-package com.blade.mvc.ui.template;
+package com.blade.model;
 
 public class Person {
 

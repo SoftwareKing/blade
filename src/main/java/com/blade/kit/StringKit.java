@@ -1,5 +1,7 @@
 package com.blade.kit;
 
+import com.blade.mvc.multipart.MIMEType;
+
 import java.util.Random;
 
 /**
@@ -95,6 +97,21 @@ public final class StringKit {
         for (int i = 0; i < num; i++)
             sb.append(c);
         return sb.toString();
+    }
+
+    public static String fileExt(String fname) {
+        if (isBlank(fname) || fname.indexOf('.') == -1) {
+            return null;
+        }
+        return fname.substring(fname.lastIndexOf('.') + 1);
+    }
+
+    public static String mimeType(String fname) {
+        String ext = fileExt(fname);
+        if (null == ext) {
+            return null;
+        }
+        return MIMEType.get(ext);
     }
 
 }

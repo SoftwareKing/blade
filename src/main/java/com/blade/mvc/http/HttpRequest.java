@@ -1,11 +1,11 @@
 package com.blade.mvc.http;
 
 import com.blade.BladeException;
-import com.blade.kit.PathKit;
 import com.blade.kit.StringKit;
 import com.blade.kit.WebKit;
 import com.blade.mvc.multipart.FileItem;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -14,7 +14,11 @@ import io.netty.handler.codec.http.multipart.*;
 import io.netty.util.CharsetUtil;
 
 import java.io.IOException;
+import java.net.URLConnection;
 import java.util.*;
+
+import static io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.USER_AGENT;
 
 /**
  * @author biezhi
@@ -28,6 +32,7 @@ public class HttpRequest implements Request {
 
     private String contextPath;
 
+    private ChannelHandlerContext ctx;
     private FullHttpRequest fullHttpRequest;
 
     private Map<String, String> headers = new HashMap<>();
@@ -38,7 +43,8 @@ public class HttpRequest implements Request {
 
     private Map<String, FileItem> fileItems = new HashMap<>();
 
-    public HttpRequest(FullHttpRequest fullHttpRequest) {
+    public HttpRequest(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) {
+        this.ctx = ctx;
         this.fullHttpRequest = fullHttpRequest;
         this.init();
     }
@@ -57,9 +63,9 @@ public class HttpRequest implements Request {
         }
 
         // 初始化cookie
-        header("Cookie").ifPresent(header -> {
-            ServerCookieDecoder.LAX.decode(header).forEach(this::parseCookie);
-        });
+        if (StringKit.isNotBlank(header(COOKIE))) {
+            ServerCookieDecoder.LAX.decode(header(COOKIE)).forEach(this::parseCookie);
+        }
     }
 
     private void parseData(InterfaceHttpData data) {
@@ -74,8 +80,9 @@ public class HttpRequest implements Request {
                 case FileUpload:
                     FileUpload fileUpload = (FileUpload) data;
                     if (fileUpload.isCompleted()) {
+                        String contentType = URLConnection.guessContentTypeFromName(fileUpload.getFilename());
                         FileItem fileItem = new FileItem(fileUpload.getName(), fileUpload.getFilename(),
-                                fileUpload.getContentType(), fileUpload.length(), fileUpload.getFile());
+                                contentType, fileUpload.length(), fileUpload.getFile());
                         fileItems.put(fileUpload.getName(), fileItem);
                     }
                     break;
@@ -110,12 +117,7 @@ public class HttpRequest implements Request {
 
     @Override
     public String host() {
-        return null;
-    }
-
-    @Override
-    public String path() {
-        return PathKit.getRelativePath(uri(), "/");
+        return ctx.channel().remoteAddress().toString().substring(1);
     }
 
     @Override
@@ -124,8 +126,13 @@ public class HttpRequest implements Request {
     }
 
     @Override
+    public String url() {
+        return new QueryStringDecoder(uri(), CharsetUtil.UTF_8).uri();
+    }
+
+    @Override
     public String userAgent() {
-        return header("User-Agent").get();
+        return header(USER_AGENT);
     }
 
     @Override
@@ -161,8 +168,8 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Optional<String> queryString() {
-        return null;
+    public String queryString() {
+        return new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).uri();
     }
 
     @Override
@@ -261,7 +268,7 @@ public class HttpRequest implements Request {
 
     @Override
     public String contentType() {
-        return header("Content-Type").orElse("");
+        return header("Content-Type");
     }
 
     @Override
@@ -271,7 +278,7 @@ public class HttpRequest implements Request {
 
     @Override
     public boolean isAjax() {
-        return null != header("x-requested-with") && "XMLHttpRequest".equals(header("x-requested-with"));
+        return "XMLHttpRequest".equals(header("x-requested-with"));
     }
 
     @Override
@@ -307,12 +314,12 @@ public class HttpRequest implements Request {
 
     @Override
     public Map<String, String> headers() {
-        return null;
+        return this.headers;
     }
 
     @Override
-    public Optional<String> header(String name) {
-        return Optional.ofNullable(headers.get(name));
+    public String header(String name) {
+        return headers.get(name);
     }
 
     @Override
@@ -333,8 +340,9 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public <T> Optional<T> attribute(String name) {
-        return Optional.ofNullable((T) this.attrs.get(name));
+    public <T> T attribute(String name) {
+        Object object = this.attrs.get(name);
+        return null != object ? (T) object : null;
     }
 
     @Override

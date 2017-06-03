@@ -20,20 +20,20 @@ public final class WebKit {
      * @return
      */
     public static String ipAddr(Request request) {
-        Optional<String> ipAddress = request.header("x-forwarded-for");
-        if (!ipAddress.isPresent() || "unknown".equalsIgnoreCase(ipAddress.get())) {
+        String ipAddress = request.header("x-forwarded-for");
+        if (StringKit.isBlank(ipAddress) || "unknown".equalsIgnoreCase(ipAddress)) {
             ipAddress = request.header("Proxy-Client-IP");
         }
-        if (!ipAddress.isPresent() || "unknown".equalsIgnoreCase(ipAddress.get())) {
+        if (StringKit.isBlank(ipAddress) || "unknown".equalsIgnoreCase(ipAddress)) {
             ipAddress = request.header("WL-Proxy-Client-IP");
         }
-        if (!ipAddress.isPresent() || "unknown".equalsIgnoreCase(ipAddress.get())) {
+        if (StringKit.isBlank(ipAddress) || "unknown".equalsIgnoreCase(ipAddress)) {
             ipAddress = request.header("X-Real-IP");
         }
-        if (!ipAddress.isPresent()) {
-            ipAddress = Optional.of("127.0.0.1");
+        if (StringKit.isBlank(ipAddress)) {
+            ipAddress = "127.0.0.1";
         }
-        return ipAddress.get();
+        return ipAddress;
     }
 
 }

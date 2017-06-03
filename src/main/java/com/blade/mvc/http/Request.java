@@ -20,12 +20,12 @@ public interface Request {
      */
     String host();
 
-    String path();
-
     /**
      * @return Return request URI
      */
     String uri();
+
+    String url();
 
     /**
      * @return Return UA
@@ -74,7 +74,7 @@ public interface Request {
     /**
      * @return Return query string
      */
-    Optional<String> queryString();
+    String queryString();
 
     /**
      * @return Return request query Map
@@ -226,7 +226,7 @@ public interface Request {
      * @param name Parameter name
      * @return Return header information
      */
-    Optional<String> header(String name);
+    String header(String name);
 
     /**
      * Get header information
@@ -253,7 +253,7 @@ public interface Request {
      * @param name Parameter name
      * @return Return parameter value
      */
-    <T> Optional<T> attribute(String name);
+    <T> T attribute(String name);
 
     /**
      * @return Return all Attribute in Request

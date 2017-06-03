@@ -282,7 +282,7 @@ public class Ason {
     }
 
     public byte getByte(String key, byte defaultValue) {
-        return (byte) getInt(key, defaultValue);
+        return (byte) get(key, defaultValue);
     }
 
     public Ason getJsonObject(String key) {

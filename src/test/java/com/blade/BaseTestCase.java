@@ -4,8 +4,7 @@ import com.blade.mvc.RouteHandler;
 import com.blade.mvc.http.HttpMethod;
 import com.github.kevinsawicki.http.HttpRequest;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 
 /**
  * @author biezhi
@@ -13,14 +12,13 @@ import org.junit.BeforeClass;
  */
 public class BaseTestCase {
 
-    protected static RouteHandler OK_HANDLER = (req, res) -> res.text("OK");
+    protected RouteHandler OK_HANDLER = (req, res) -> res.text("OK");
+    protected Blade app;
+    protected String origin = "http://127.0.0.1:9000";
+    protected String firefoxUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:53.0) Gecko/20100101 Firefox/53.0";
 
-    protected static Blade app;
-
-    protected static String origin = "http://127.0.0.1:9000";
-
-    @BeforeClass
-    public static void setup() throws Exception {
+    @Before
+    public void setup() throws Exception {
         app = Blade.me();
     }
 
@@ -29,22 +27,16 @@ public class BaseTestCase {
     }
 
     @After
-    public void clearRoutes() {
-        app.routeMatcher().clear();
-    }
-
-    @AfterClass
-    public static void tearDown() {
+    public void after() {
         app.stop();
         app.await();
     }
 
-    protected static String getBody(String pathname) throws Exception {
-//        return Unirest.get(origin + pathname).asString().getBody();
+    protected String getBody(String pathname) throws Exception {
         return HttpRequest.get(origin + pathname).body();
     }
 
-    protected static String call(HttpMethod method, String pathname) throws Exception {
+    protected String call(HttpMethod method, String pathname) throws Exception {
         if (method == HttpMethod.POST) {
             return HttpRequest.post(origin + pathname).body();
         }

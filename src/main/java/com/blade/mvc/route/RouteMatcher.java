@@ -6,8 +6,6 @@ import com.blade.kit.PathKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
 import com.blade.mvc.RouteHandler;
-import com.blade.mvc.hook.Invoker;
-import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
@@ -86,7 +84,12 @@ public class RouteMatcher {
         return addRoute(httpMethod, path, handler, RouteHandler.class, method);
     }
 
+
     public Route addRoute(HttpMethod httpMethod, String path, Object controller, Class<?> controllerType, Method method) {
+
+        // [/** | /*]
+        path = "*".equals(path) ? "/.*" : path;
+        path = path.replace("/**", "/.*").replace("/*", "/.*");
 
         String key = path + "#" + httpMethod.toString();
         // existent

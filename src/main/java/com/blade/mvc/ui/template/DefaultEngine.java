@@ -2,6 +2,7 @@ package com.blade.mvc.ui.template;
 
 import com.blade.BladeException;
 import com.blade.kit.IOKit;
+import com.blade.mvc.Const;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.ui.ModelAndView;
@@ -23,7 +24,7 @@ public class DefaultEngine implements TemplateEngine {
     @Override
     public void render(ModelAndView modelAndView, Writer writer) {
         String view = modelAndView.getView();
-        String viewPath = WebServer.CLASSPATH + "templates" + File.separator + view;
+        String viewPath = Const.CLASSPATH + "templates" + File.separator + view;
         try {
             Request request = WebContext.request();
             String body = IOKit.readToString(viewPath);

@@ -8,6 +8,8 @@ import io.netty.handler.codec.http.HttpVersion;
  */
 public interface Const {
 
+    String CLASSPATH = Const.class.getResource("/").getPath();
+
     String CONTENT_TYPE_HTML = "text/html; charset=UTF-8";
     String CONTENT_TYPE_JSON = "application/json; charset=UTF-8";
     String CONTENT_TYPE_TEXT = "text/plain; charset=UTF-8";

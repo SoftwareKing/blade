@@ -3,9 +3,11 @@ package com.blade.server.netty;
 import com.blade.Blade;
 import com.blade.kit.DateKit;
 import com.blade.kit.IOKit;
+import com.blade.kit.StringKit;
 import com.blade.mvc.Const;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
+import com.blade.mvc.multipart.MIMEType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -76,6 +78,8 @@ public class StaticFileHandler {
                 String content = IOKit.readToString(input);
                 FullHttpResponse httpResponse = new DefaultFullHttpResponse(Const.HTTP_VERSION, OK, Unpooled.copiedBuffer(content, CharsetUtil.UTF_8));
                 setDateAndCacheHeaders(httpResponse, null);
+                String contentType = StringKit.mimeType(uri);
+                if (null != contentType) httpResponse.headers().set(CONTENT_TYPE, contentType);
                 httpResponse.headers().set(CONTENT_LENGTH, content.length());
                 if (request.keepAlive()) {
                     httpResponse.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
@@ -176,12 +180,12 @@ public class StaticFileHandler {
 
     private boolean http304(ChannelHandlerContext ctx, Request request, long lastModified) {
         // Cache Validation
-        Optional<String> ifMdf = request.header(IF_MODIFIED_SINCE);
-        if (!ifMdf.isPresent()) {
+        String ifMdf = request.header(IF_MODIFIED_SINCE);
+        if (StringKit.isBlank(ifMdf)) {
             return false;
         }
 
-        String ifModifiedSince = ifMdf.get();
+        String ifModifiedSince = ifMdf;
         Date ifModifiedSinceDate = format(ifModifiedSince, Const.HTTP_DATE_FORMAT);
         // Only compare up to the second because the datetime format we send to the client
         // does not have milliseconds
@@ -295,7 +299,7 @@ public class StaticFileHandler {
             return null;
         }
         // Convert to absolute path.
-        return WebServer.CLASSPATH + uri.substring(1);
+        return Const.CLASSPATH + uri.substring(1);
     }
 
 
@@ -330,7 +334,10 @@ public class StaticFileHandler {
      * @param file     file to extract content type
      */
     private static void setContentTypeHeader(HttpResponse response, File file) {
-        String contentType = URLConnection.guessContentTypeFromName(file.getName());
+        String contentType = StringKit.mimeType(file.getName());
+        if (null != contentType) {
+            contentType = URLConnection.guessContentTypeFromName(file.getName());
+        }
         response.headers().set(CONTENT_TYPE, contentType);
     }
 

@@ -1,5 +1,7 @@
-package com.blade.mvc.ui.template;
+package com.blade;
 
+import com.blade.model.Person;
+import com.blade.mvc.ui.template.UncheckedTemplateException;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
