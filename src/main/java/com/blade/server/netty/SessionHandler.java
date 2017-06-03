@@ -24,15 +24,16 @@ public class SessionHandler implements RequestHandler {
     public void handle(ChannelHandlerContext ctx, Request request, Response response) {
         Session session = getSession(request);
         if (null == session) {
-            createSession(response);
+            createSession(request, response);
         } else {
+            System.out.println(session.expired());
             if (session.expired() < Instant.now().getEpochSecond()) {
                 removeSession(session, response);
             }
         }
     }
 
-    private void createSession(Response response) {
+    private void createSession(Request request, Response response) {
 
         long now = Instant.now().getEpochSecond();
         long expired = now + sessionManager.timeout();
@@ -48,6 +49,7 @@ public class SessionHandler implements RequestHandler {
         session.setExpired(expired);
         sessionManager.addSession(session);
 
+        request.cookie(cookie);
         response.cookie(cookie);
     }
 

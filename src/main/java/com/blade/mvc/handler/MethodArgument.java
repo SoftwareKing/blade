@@ -7,6 +7,7 @@ import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
 import com.blade.mvc.annotation.*;
 import com.blade.mvc.hook.Invoker;
+import com.blade.mvc.http.HttpSession;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
 import com.blade.mvc.http.Session;
@@ -76,7 +77,7 @@ public final class MethodArgument {
                         continue;
                     } else if (argType == Response.class) {
                         args[i] = response;
-                    } else if (argType == Session.class) {
+                    } else if (argType == Session.class || argType == HttpSession.class) {
                         args[i] = request.session();
                     } else if (argType == FileItem.class) {
                         args[i] = new ArrayList<>(request.fileItems().values()).get(0);

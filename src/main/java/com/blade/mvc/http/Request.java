@@ -13,7 +13,7 @@ import java.util.Optional;
  */
 public interface Request {
 
-    Request pathParams(Map<String, String> pathParams);
+    Request initPathParams(Map<String, String> pathParams);
 
     /**
      * @return Return client request host
@@ -45,7 +45,7 @@ public interface Request {
     /**
      * @return Return parameters on the path Map
      */
-    Map<String, String> pathParams();
+    Map<String, String> initPathParams();
 
     /**
      * Get a URL parameter
@@ -206,6 +206,8 @@ public interface Request {
      * @return Return Cookie Value
      */
     String cookie(String name, String defaultValue);
+
+    Request cookie(Cookie cookie);
 
     /**
      * @return Return header information Map

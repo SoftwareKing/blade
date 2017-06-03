@@ -112,7 +112,7 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Request pathParams(Map<String, String> pathParams) {
+    public Request initPathParams(Map<String, String> pathParams) {
         if (null != pathParams) {
             this.pathParams = pathParams;
         }
@@ -150,7 +150,7 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Map<String, String> pathParams() {
+    public Map<String, String> initPathParams() {
         return this.pathParams;
     }
 
@@ -313,6 +313,12 @@ public class HttpRequest implements Request {
     @Override
     public String cookie(String name, String defaultValue) {
         return cookie(name).isPresent() ? cookie(name).get() : defaultValue;
+    }
+
+    @Override
+    public Request cookie(Cookie cookie) {
+        this.cookies.put(cookie.name(), cookie);
+        return this;
     }
 
     @Override

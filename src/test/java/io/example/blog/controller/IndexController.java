@@ -4,6 +4,7 @@ import com.blade.ioc.annotation.Inject;
 import com.blade.mvc.annotation.*;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
+import com.blade.mvc.http.Session;
 import com.blade.mvc.multipart.FileItem;
 import com.blade.mvc.ui.RestResponse;
 import io.example.blog.model.Article;
@@ -26,9 +27,12 @@ public class IndexController {
     }
 
     @GetRoute(values = "/user")
-    public String userPage(Request request) {
+    public String userPage(Request request, Session session) {
         request.attribute("name", "biezhi");
         request.attribute("github", "https://github.com/biezhi");
+        if (null != session) {
+            session.attribute("loginUser", "admin");
+        }
         return "user.html";
     }
 

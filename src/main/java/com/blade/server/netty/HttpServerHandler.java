@@ -99,6 +99,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
                 sessionHandler.handle(ctx, request, response);
 
                 WebContext.set(new WebContext(request, response));
+
                 // web hook
                 int interrupts = routeMatcher.getBefore(uri).stream()
                         .mapToInt(route -> this.invokeHook(request, response, route)).sum();
@@ -106,16 +107,17 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
                 if (interrupts == 0) {
                     Route route = routeMatcher.lookupRoute(request.method(), uri);
                     if (null != route) {
-                        request.pathParams(route.getPathParams());
+                        request.initPathParams(route.getPathParams());
                         // execute
-                        if (!this.routeHandle(request, response, route) && !response.isCommit()) {
+                        this.routeHandle(request, response, route);
+                        routeMatcher.getAfter(uri).forEach(r -> this.invokeHook(request, response, r));
+                        if (!response.isCommit()) {
                             FullHttpResponse httpResponse = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.EMPTY_BUFFER);
                             httpResponse.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
                             httpResponse.headers().set(DATE, DateKit.gmtDate());
                             httpResponse.headers().setInt(CONTENT_LENGTH, 0);
                             ctx.writeAndFlush(httpResponse);
                         }
-                        routeMatcher.getAfter(uri).forEach(r -> this.invokeHook(request, response, r));
                     } else {
                         // 404
                         sendError(ctx, NOT_FOUND, String.format(DefaultUI.VIEW_404, uri));

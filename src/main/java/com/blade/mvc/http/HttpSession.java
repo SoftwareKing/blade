@@ -11,6 +11,7 @@ public class HttpSession implements Session {
 
     private Map<String, Object> attrs = new HashMap<>();
     private String id;
+    private String ip;
     private long created;
     private long expired;
 
@@ -23,6 +24,10 @@ public class HttpSession implements Session {
         return id;
     }
 
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
     public void setCreated(long created) {
         this.created = created;
     }
@@ -32,13 +37,8 @@ public class HttpSession implements Session {
     }
 
     @Override
-    public <T> T attribute(String name) {
-        return null;
-    }
-
-    @Override
     public void attribute(String name, Object value) {
-
+        this.attrs.put(name, value);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class HttpSession implements Session {
 
     @Override
     public void removeAttribute(String name) {
-
+        this.attrs.remove(name);
     }
 
     @Override
