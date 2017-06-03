@@ -71,7 +71,10 @@ public class WebStatistics implements Serializable {
 
     public List<List<String>> getRedirectsAsStrings() {
         List<List<String>> list = new ArrayList<>();
-        redirects.forEach((url, count) -> list.add(Arrays.asList(url, count.toString())));
+        redirects.forEach((url, count) -> {
+            List<String> s = Arrays.asList(url, count.toString());
+            list.add(s);
+        });
         return list;
     }
 

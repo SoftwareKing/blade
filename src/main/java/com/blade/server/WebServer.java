@@ -15,6 +15,7 @@ import com.blade.lifecycle.BeanProcessor;
 import com.blade.lifecycle.Event;
 import com.blade.lifecycle.StartedEvent;
 import com.blade.mvc.Const;
+import com.blade.mvc.WebContext;
 import com.blade.mvc.annotation.Path;
 import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.route.RouteBuilder;
@@ -130,6 +131,8 @@ public class WebServer {
         log.info("{} initialize successfully, Time elapsed: {} ms.", appName, System.currentTimeMillis() - startTime);
         log.info("Blade start with {}:{}", address, port);
         log.info("Open your web browser and navigate to {}://{}:{}", (SSL ? "https" : "http"), address.replace("0.0.0.0", "127.0.0.1"), port);
+
+        WebContext.init(blade, "/", SSL);
 
         blade.eventManager().fireEvent(Event.Type.SERVER_STARTED, blade);
     }

@@ -1,5 +1,6 @@
 package com.blade.mvc;
 
+import com.blade.Blade;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
 import com.blade.mvc.http.SessionManager;
@@ -15,6 +16,10 @@ public class WebContext {
 
     // used netty fast theadLocal
     private static final FastThreadLocal<WebContext> fastThreadLocal = new FastThreadLocal<>();
+
+    private static Blade blade;
+    private static String contextPath;
+    private static boolean ssl;
 
     private Request request;
     private Response response;
@@ -52,4 +57,23 @@ public class WebContext {
         WebContext webContext = get();
         return null != webContext ? webContext.sessionManager : null;
     }
+
+    public static void init(Blade blade_, String contextPath_, boolean ssl_) {
+        blade = blade_;
+        contextPath = contextPath_;
+        ssl = ssl_;
+    }
+
+    public static Blade blade() {
+        return blade;
+    }
+
+    public static boolean isSSL() {
+        return ssl;
+    }
+
+    public static String contextPath() {
+        return contextPath;
+    }
+
 }

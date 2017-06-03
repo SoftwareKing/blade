@@ -5,6 +5,7 @@ import com.blade.BladeException;
 import com.blade.kit.DateKit;
 import com.blade.kit.JsonKit;
 import com.blade.kit.StringKit;
+import com.blade.metric.WebStatistics;
 import com.blade.mvc.Const;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.ui.ModelAndView;
@@ -256,13 +257,12 @@ public class HttpResponse implements Response {
 
     @Override
     public void redirect(String newUri) {
-        if (newUri.charAt(0) == '/') {
-            headers.set(HttpHeaders.Names.LOCATION, "http://127.0.0.1:9001" + newUri);
-        } else {
-            headers.set(HttpHeaders.Names.LOCATION, newUri);
-        }
-        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(302), Unpooled.copiedBuffer("", CharsetUtil.UTF_8));
+        headers.set(HttpHeaders.Names.LOCATION, newUri);
+        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.FOUND);
         this.send(response);
+        if (WebContext.blade().openMonitor()) {
+            WebStatistics.me().registerRedirect(newUri);
+        }
     }
 
     @Override

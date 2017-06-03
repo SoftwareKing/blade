@@ -277,7 +277,8 @@ public class HttpRequest implements Request {
 
     @Override
     public String contentType() {
-        return header(CONTENT_TYPE);
+        String contentType = header(CONTENT_TYPE);
+        return null != contentType ? contentType : "Unknown";
     }
 
     @Override

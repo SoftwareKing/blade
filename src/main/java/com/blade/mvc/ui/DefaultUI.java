@@ -38,9 +38,10 @@ public interface DefaultUI {
 
     enum MonitorEnum {
         statistics, total_requests, unique_requests,
-        open_connections, requests, ip, no_completed_requests,
-        redirects, no_redirects, connections, established, closed,
-        sent, received, speed
+        open_connections, requests, last_request,
+        ip, no_completed_requests, dest_url, redirect_num,
+        redirects, no_redirects, connections,
+        established, closed, sent, received, speed
     }
 
 
@@ -55,20 +56,20 @@ public interface DefaultUI {
             htmlCreator.h1(getKey(MonitorEnum.statistics));
 
             htmlCreator.startP().addBold(getKey(MonitorEnum.total_requests))
-                    .add("" + WEB_STATISTICS.getNumberOfRequests()).endP();
+                    .add("：" + WEB_STATISTICS.getNumberOfRequests()).endP();
 
             htmlCreator.startP().addBold(getKey(MonitorEnum.unique_requests))
-                    .add("" + WEB_STATISTICS.getNumberOfUniqueRequests()).endP();
+                    .add("：" + WEB_STATISTICS.getNumberOfUniqueRequests()).endP();
 
             htmlCreator.startP().addBold(getKey(MonitorEnum.open_connections))
-                    .add("" + WEB_STATISTICS.getConnectionCount()).endP();
+                    .add("：" + WEB_STATISTICS.getConnectionCount()).endP();
 
             htmlCreator.hr();
             htmlCreator.h2(getKey(MonitorEnum.requests));
             if (WEB_STATISTICS.getIpRequestsAsStrings().size() == 0) {
                 htmlCreator.paragraph(getKey(MonitorEnum.no_completed_requests));
             } else {
-                List<String> requestsTableHeaders = Arrays.asList(getKey(MonitorEnum.ip), getKey(MonitorEnum.requests), "Date and time of last request");
+                List<String> requestsTableHeaders = Arrays.asList(getKey(MonitorEnum.ip), getKey(MonitorEnum.requests), getKey(MonitorEnum.last_request));
                 htmlCreator.addTableWithHeaders(requestsTableHeaders);
                 WEB_STATISTICS.getIpRequestsAsStrings().forEach(htmlCreator::addRowToTable);
                 htmlCreator.endTable();
@@ -79,7 +80,7 @@ public interface DefaultUI {
             if (WEB_STATISTICS.getRedirectsAsStrings().size() == 0) {
                 htmlCreator.paragraph(getKey(MonitorEnum.no_redirects));
             } else {
-                List<String> redirectsTableHeaders = Arrays.asList("Destination URL", "Number of redirects");
+                List<String> redirectsTableHeaders = Arrays.asList(getKey(MonitorEnum.dest_url), getKey(MonitorEnum.redirect_num));
                 htmlCreator.addTableWithHeaders(redirectsTableHeaders);
                 WEB_STATISTICS.getRedirectsAsStrings().forEach(htmlCreator::addRowToTable);
                 htmlCreator.endTable();

@@ -79,4 +79,8 @@ public class IndexController {
         response.donwload("文件.txt", new File(path));
     }
 
+    @GetRoute(values = "redirect")
+    public void redirect(@QueryParam String url, Response response) {
+        response.redirect(url);
+    }
 }
