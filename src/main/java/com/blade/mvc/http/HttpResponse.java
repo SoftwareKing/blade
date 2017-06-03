@@ -62,7 +62,6 @@ public class HttpResponse implements Response {
     public HttpResponse(ChannelHandlerContext ctx, TemplateEngine templateEngine) {
         this.ctx = ctx;
         this.templateEngine = templateEngine;
-        headers.set(SERVER, "blade/" + Blade.VER);
     }
 
     @Override
@@ -105,11 +104,6 @@ public class HttpResponse implements Response {
         Map<String, String> map = new HashMap<>(this.headers.size());
         this.headers.forEach(header -> map.put(header.getKey(), header.getValue()));
         return map;
-    }
-
-    @Override
-    public String header(String name) {
-        return this.headers.get(name);
     }
 
     @Override
@@ -197,22 +191,25 @@ public class HttpResponse implements Response {
     }
 
     @Override
-    public void donwload(String fileName, File file) {
+    public void donwload(String fileName, File file) throws Exception {
         try {
-            final RandomAccessFile raf = new RandomAccessFile(file, "r");
+            if (null == file || !file.exists() || !file.isFile()) {
+                throw new BladeException("please check the file is effective!");
+            }
+            RandomAccessFile raf = new RandomAccessFile(file, "r");
             long fileLength = raf.length();
             this.contentType = StringKit.mimeType(file.getName());
 
-            this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
-
             io.netty.handler.codec.http.HttpResponse httpResponse = new DefaultHttpResponse(HTTP_1_1, OK);
+            HttpHeaders httpHeaders = httpResponse.headers().add(getDefaultHeader());
+
             boolean keepAlive = WebContext.request().keepAlive();
             if (keepAlive) {
                 httpResponse.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
             }
-            httpResponse.headers().set(CONTENT_TYPE, this.contentType);
-            httpResponse.headers().set("Content-Disposition", "attachment; filename=" + new String(fileName.getBytes("UTF-8"), "ISO8859_1"));
-            httpResponse.headers().set(CONTENT_LENGTH, fileLength);
+            httpHeaders.set(CONTENT_TYPE, this.contentType);
+            httpHeaders.set("Content-Disposition", "attachment; filename=" + new String(fileName.getBytes("UTF-8"), "ISO8859_1"));
+            httpHeaders.set(CONTENT_LENGTH, fileLength);
 
             // Write the initial line and the header.
             ctx.write(httpResponse);
@@ -226,10 +223,9 @@ public class HttpResponse implements Response {
             if (!keepAlive) {
                 lastContentFuture.addListener(ChannelFutureListener.CLOSE);
             }
-
             isCommit = true;
         } catch (Exception e) {
-            throw new BladeException(e);
+            throw e;
         }
     }
 
@@ -245,24 +241,6 @@ public class HttpResponse implements Response {
         templateEngine.render(modelAndView, writer);
         FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), buffer);
         this.send(response);
-    }
-
-    private void send(FullHttpResponse response) {
-        headers.set(DATE, DateKit.gmtDate());
-        headers.set(CONTENT_TYPE, this.contentType);
-        headers.setInt(CONTENT_LENGTH, response.content().readableBytes());
-        this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
-
-        HttpHeaders httpHeaders = response.headers().add(this.headers);
-
-        boolean keepAlive = WebContext.request().keepAlive();
-        if (!keepAlive) {
-            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-        } else {
-            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
-            ctx.writeAndFlush(response);
-        }
-        isCommit = true;
     }
 
     @Override
@@ -281,4 +259,24 @@ public class HttpResponse implements Response {
         return isCommit;
     }
 
+    private void send(FullHttpResponse response) {
+        HttpHeaders httpHeaders = response.headers().add(getDefaultHeader());
+        httpHeaders.setInt(CONTENT_LENGTH, response.content().readableBytes());
+        boolean keepAlive = WebContext.request().keepAlive();
+        if (!keepAlive) {
+            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        } else {
+            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+            ctx.writeAndFlush(response);
+        }
+        isCommit = true;
+    }
+
+    private HttpHeaders getDefaultHeader() {
+        headers.set(DATE, DateKit.gmtDate());
+        headers.set(CONTENT_TYPE, this.contentType);
+        headers.set(SERVER, "blade/" + Blade.VER);
+        this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
+        return headers;
+    }
 }

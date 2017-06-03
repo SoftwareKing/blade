@@ -68,8 +68,8 @@ public class RequestTest extends BaseTestCase {
     @Test
     public void testPathParams() throws Exception {
         start(
-                app.get("/user1/:id", (req, res) -> res.json(req.initPathParams()))
-                        .get("/user2/:name/:age", (req, res) -> res.json(req.initPathParams()))
+                app.get("/user1/:id", (req, res) -> res.json(req.pathParams()))
+                        .get("/user2/:name/:age", (req, res) -> res.json(req.pathParams()))
         );
 
         String body1 = HttpRequest.get(origin + "/user1/10").body();

@@ -6,6 +6,8 @@ import java.io.File;
 import java.util.Map;
 
 /**
+ * Http Response
+ *
  * @author biezhi
  *         2017/5/31
  */
@@ -42,14 +44,18 @@ public interface Response {
      */
     Response contentType(String contentType);
 
+    /**
+     * @return return response content-type
+     */
     String contentType();
 
+    /**
+     * @return return response headers
+     */
     Map<String, String> headers();
 
-    String header(String name);
-
     /**
-     * Setting header
+     * setting header
      *
      * @param name  Header Name
      * @param value Header Value
@@ -57,10 +63,16 @@ public interface Response {
      */
     Response header(String name, String value);
 
+    /**
+     * add raw response cookie
+     *
+     * @param cookie
+     * @return
+     */
     Response cookie(Cookie cookie);
 
     /**
-     * Setting Cookie
+     * add Cookie
      *
      * @param name  Cookie Name
      * @param value Cookie Value
@@ -133,7 +145,13 @@ public interface Response {
      */
     void json(Object bean);
 
-    void donwload(String fileName, File file);
+    /**
+     * download some file to clinet
+     *
+     * @param fileName give client file name
+     * @param file
+     */
+    void donwload(String fileName, File file) throws Exception;
 
     /**
      * Render view
@@ -158,6 +176,9 @@ public interface Response {
      */
     void redirect(String newUri);
 
+    /**
+     * @return return current response is commit
+     */
     boolean isCommit();
 
 }
