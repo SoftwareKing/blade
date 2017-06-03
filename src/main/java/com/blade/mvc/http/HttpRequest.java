@@ -3,6 +3,7 @@ package com.blade.mvc.http;
 import com.blade.BladeException;
 import com.blade.kit.StringKit;
 import com.blade.kit.WebKit;
+import com.blade.mvc.Const;
 import com.blade.mvc.multipart.FileItem;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -43,9 +44,12 @@ public class HttpRequest implements Request {
 
     private Map<String, FileItem> fileItems = new HashMap<>();
 
-    public HttpRequest(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) {
+    private SessionManager sessionManager;
+
+    public HttpRequest(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest, SessionManager sessionManager) {
         this.ctx = ctx;
         this.fullHttpRequest = fullHttpRequest;
+        this.sessionManager = sessionManager;
         this.init();
     }
 
@@ -258,11 +262,10 @@ public class HttpRequest implements Request {
 
     @Override
     public Session session() {
-        return new HttpSession();
-    }
-
-    @Override
-    public Session session(boolean create) {
+        Optional<String> sessionId = cookie(Const.SESSION_COOKIE_NAME);
+        if (sessionId.isPresent()) {
+            return sessionManager.getSession(sessionId.get());
+        }
         return null;
     }
 

@@ -114,8 +114,11 @@ public class HttpResponse implements Response {
         if (cookie.domain() != null) {
             nettyCookie.setDomain(cookie.domain());
         }
-        nettyCookie.setMaxAge(cookie.maxAge());
+        if (cookie.maxAge() > 0) {
+            nettyCookie.setMaxAge(cookie.maxAge());
+        }
         nettyCookie.setPath(cookie.path());
+        nettyCookie.setHttpOnly(cookie.httpOnly());
         this.cookies.add(nettyCookie);
         return this;
     }
@@ -201,9 +204,10 @@ public class HttpResponse implements Response {
         headers.set(DATE, DateKit.gmtDate());
         headers.set(CONTENT_TYPE, this.contentType);
         headers.setInt(CONTENT_LENGTH, response.content().readableBytes());
+        this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
 
         HttpHeaders httpHeaders = response.headers().add(this.headers);
-        this.cookies.forEach(cookie -> httpHeaders.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
+
         boolean keepAlive = WebContext.request().keepAlive();
         if (!keepAlive) {
             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);

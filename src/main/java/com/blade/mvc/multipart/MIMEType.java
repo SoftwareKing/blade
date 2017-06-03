@@ -3,12 +3,11 @@ package com.blade.mvc.multipart;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class MIMEType {
+public interface MIMEType {
 
-    public static final String PLAIN_TEXT = "text/plain";
-    public static final String APPLICATION = "application/octet-stream";
+    String APPLICATION = "application/octet-stream";
 
-    private static final Map<String, String> mimeTypes = new HashMap<String, String>() {{
+    Map<String, String> mimeTypes = new HashMap<String, String>() {{
         put("kar", "audio/midi");
         put("mid", "audio/midi");
         put("midi", "audio/midi");

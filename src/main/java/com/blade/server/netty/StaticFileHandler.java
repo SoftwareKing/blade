@@ -40,7 +40,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  * @author biezhi
  *         2017/5/31
  */
-public class StaticFileHandler {
+public class StaticFileHandler implements RequestHandler {
 
     public static final Logger log = LoggerFactory.getLogger(StaticFileHandler.class);
 
@@ -61,11 +61,14 @@ public class StaticFileHandler {
      * @param uri
      * @throws Exception
      */
-    public void execute(ChannelHandlerContext ctx, Request request, Response response, String uri) throws Exception {
+    @Override
+    public void handle(ChannelHandlerContext ctx, Request request, Response response) throws Exception {
         if (!"GET".equals(request.method())) {
             sendError(ctx, METHOD_NOT_ALLOWED);
             return;
         }
+
+        String uri = request.uri();
 
         if (uri.startsWith(Const.WEB_JARS)) {
             InputStream input = StaticFileHandler.class.getResourceAsStream("/META-INF/resources" + uri);

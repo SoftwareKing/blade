@@ -14,6 +14,7 @@ import com.blade.kit.ReflectKit;
 import com.blade.lifecycle.BeanProcessor;
 import com.blade.lifecycle.Event;
 import com.blade.lifecycle.StartedEvent;
+import com.blade.mvc.Const;
 import com.blade.mvc.annotation.Path;
 import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.route.RouteBuilder;
@@ -25,12 +26,11 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.blade.mvc.Const.CLASSPATH;
 
@@ -43,27 +43,16 @@ public class WebServer {
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
 
     private Blade blade;
-    private String address;
-    private int port;
-    private boolean SSL;
-    private String[] args;
     private Environment environment;
 
     private EventLoopGroup bossGroup, workerGroup;
     private Channel channel;
 
-    private Set<String> pkgs = new HashSet<>(Arrays.asList("com.blade.plugin"));
-
     private RouteBuilder routeBuilder;
 
-    public WebServer(Blade blade, String[] args) {
+    public void initAndStart(Blade blade, String[] args, Class<?> mainCls) throws Exception {
         this.blade = blade;
-        this.address = blade.address();
-        this.port = blade.port();
-        this.args = args;
-    }
 
-    public void initAndStart(Class<?> mainCls) throws Exception {
         long initStart = System.currentTimeMillis();
         log.info("Blade environment: jdk.version\t=> {}", System.getProperty("java.version"));
         log.info("Blade environment: user.dir\t\t=> {}", System.getProperty("user.dir"));
@@ -97,7 +86,7 @@ public class WebServer {
         RouteMatcher routeMatcher = blade.routeMatcher();
         routeBuilder = new RouteBuilder(routeMatcher);
 
-        pkgs.stream()
+        blade.scanPackages().stream()
                 .flatMap(DynamicContext::recursionFindClasses)
                 .map(ClassInfo::getClazz)
                 .filter(ReflectKit::isNormalClass)
@@ -119,12 +108,7 @@ public class WebServer {
     private void startServer(long startTime) throws Exception {
         // Configure SSL.
         SslContext sslCtx = null;
-        if (SSL) {
-            SelfSignedCertificate ssc = new SelfSignedCertificate();
-            sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
-        } else {
-            sslCtx = null;
-        }
+        boolean SSL = false;
 
         // Configure the server.
         this.bossGroup = new NioEventLoopGroup(1);
@@ -135,6 +119,9 @@ public class WebServer {
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new HttpServerInitializer(blade, sslCtx));
+
+        String address = blade.address();
+        int port = blade.port();
 
         channel = b.bind(address, port).sync().channel();
         String appName = blade.appName();
@@ -177,10 +164,8 @@ public class WebServer {
     }
 
     private void initConfig(Class<?> mainCls) {
-        if (blade.scanPackages().isPresent()) {
-            pkgs.addAll(Arrays.asList(blade.scanPackages().get()));
-        } else if (null != mainCls) {
-            pkgs.add(mainCls.getPackage().getName());
+        if (blade.scanPackages().size() == 1 && blade.scanPackages().contains(Const.PLUGIN_PACKAGE_NAME)) {
+            blade.scanPackages(mainCls.getPackage().getName());
         }
         BannerStarter.printStart();
     }

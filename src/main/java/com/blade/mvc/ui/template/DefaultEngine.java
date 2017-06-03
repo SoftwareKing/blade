@@ -5,6 +5,7 @@ import com.blade.kit.IOKit;
 import com.blade.mvc.Const;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Session;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.server.netty.WebServer;
 
@@ -31,8 +32,10 @@ public class DefaultEngine implements TemplateEngine {
 
             Map<String, Object> attrs = new HashMap<>();
             attrs.putAll(request.attributes());
-            attrs.putAll(request.session().attributes());
-
+            Session session = request.session();
+            if (null != session) {
+                attrs.putAll(session.attributes());
+            }
             String result = BladeTemplate.template(body, attrs).fmt();
             writer.write(result);
         } catch (Exception e) {

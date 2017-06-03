@@ -10,6 +10,26 @@ import java.util.Map;
 public class HttpSession implements Session {
 
     private Map<String, Object> attrs = new HashMap<>();
+    private String id;
+    private long created;
+    private long expired;
+
+    public HttpSession(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public String id() {
+        return id;
+    }
+
+    public void setCreated(long created) {
+        this.created = created;
+    }
+
+    public void setExpired(long expired) {
+        this.expired = expired;
+    }
 
     @Override
     public <T> T attribute(String name) {
@@ -29,5 +49,15 @@ public class HttpSession implements Session {
     @Override
     public void removeAttribute(String name) {
 
+    }
+
+    @Override
+    public long created() {
+        return this.created;
+    }
+
+    @Override
+    public long expired() {
+        return this.expired;
     }
 }

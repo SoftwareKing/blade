@@ -170,14 +170,6 @@ public interface Request {
     Session session();
 
     /**
-     * Return to the current or create a session
-     *
-     * @param create create session
-     * @return Return session
-     */
-    Session session(boolean create);
-
-    /**
      * @return Return contentType
      */
     String contentType();

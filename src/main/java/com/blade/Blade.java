@@ -5,8 +5,10 @@ import com.blade.ioc.SimpleIoc;
 import com.blade.lifecycle.Event;
 import com.blade.lifecycle.EventListener;
 import com.blade.lifecycle.EventManager;
+import com.blade.mvc.Const;
 import com.blade.mvc.RouteHandler;
 import com.blade.mvc.http.HttpMethod;
+import com.blade.mvc.http.SessionManager;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.template.DefaultEngine;
 import com.blade.mvc.ui.template.TemplateEngine;
@@ -16,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Optional;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
@@ -32,7 +34,6 @@ public class Blade {
     private static final Logger log = LoggerFactory.getLogger(Blade.class);
 
     public static final String VER = "2.0.0-SNAPSHOT";
-
     private String appName = "blade";
     private int port = 9000;
     private boolean fileList = false;
@@ -43,13 +44,14 @@ public class Blade {
     private String address = "0.0.0.0";
     private String bootConf = "classpath:app.properties";
     private RouteMatcher routeMatcher = new RouteMatcher();
-    private WebServer webServer;
+    private WebServer webServer = new WebServer();
 
-    private Optional<String[]> pkgs = Optional.empty();
+    private Set<String> pkgs = new LinkedHashSet<>(Arrays.asList(Const.PLUGIN_PACKAGE_NAME));
 
     private EventManager eventManager = new EventManager();
     private TemplateEngine templateEngine = new DefaultEngine();
     private Ioc ioc = new SimpleIoc();
+    private SessionManager sessionManager = new SessionManager();
 
     private Set<String> statics = new HashSet<>(Arrays.asList("/favicon.ico", "/static/", "/upload/", "/webjars/"));
 
@@ -158,11 +160,11 @@ public class Blade {
     }
 
     public Blade scanPackages(String... pkgs) {
-        this.pkgs = Optional.of(pkgs);
+        this.pkgs.addAll(Arrays.asList(pkgs));
         return this;
     }
 
-    public Optional<String[]> scanPackages() {
+    public Set<String> scanPackages() {
         return pkgs;
     }
 
@@ -212,6 +214,10 @@ public class Blade {
         return eventManager;
     }
 
+    public SessionManager sessionManager() {
+        return sessionManager;
+    }
+
     public Blade start() {
         return this.start(null, address, port, null);
     }
@@ -223,10 +229,9 @@ public class Blade {
     public Blade start(Class<?> mainCls, String address, int port, String... args) {
         try {
             eventManager.fireEvent(Event.Type.SERVER_STARTING, this);
-            webServer = new WebServer(this, args);
             Thread thread = new Thread(() -> {
                 try {
-                    webServer.initAndStart(mainCls);
+                    webServer.initAndStart(Blade.this, args, mainCls);
                     latch.countDown();
                     webServer.join();
                 } catch (Exception e) {

@@ -11,6 +11,8 @@ import java.util.Set;
  */
 public interface Session {
 
+    String id();
+
     <T> T attribute(String name);
 
     void attribute(String name, Object value);
@@ -18,5 +20,9 @@ public interface Session {
     Map<String, Object> attributes();
 
     void removeAttribute(String name);
+
+    long created();
+
+    long expired();
 
 }

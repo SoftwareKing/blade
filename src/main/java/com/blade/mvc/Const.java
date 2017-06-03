@@ -1,5 +1,6 @@
 package com.blade.mvc;
 
+import com.blade.kit.StringKit;
 import io.netty.handler.codec.http.HttpVersion;
 
 /**
@@ -19,4 +20,9 @@ public interface Const {
     HttpVersion HTTP_VERSION = HttpVersion.HTTP_1_1;
 
     String WEB_JARS = "/webjars/";
+
+    String PLUGIN_PACKAGE_NAME = "com.blade.plugin";
+
+    String SESSION_COOKIE_NAME = "SESSION";
+
 }

@@ -9,10 +9,7 @@ import com.blade.kit.StringKit;
 import com.blade.mvc.RouteHandler;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
-import com.blade.mvc.http.HttpRequest;
-import com.blade.mvc.http.HttpResponse;
-import com.blade.mvc.http.Request;
-import com.blade.mvc.http.Response;
+import com.blade.mvc.http.*;
 import com.blade.mvc.route.Route;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.DefaultUI;
@@ -58,7 +55,11 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     private boolean showFileList;
     private boolean devMode;
     private TemplateEngine templateEngine;
+
     private StaticFileHandler staticFileHandler;
+
+    private SessionManager sessionManager;
+    private SessionHandler sessionHandler;
 
     private static final ExecutorService threadPool = Executors.newFixedThreadPool(8);
 
@@ -70,6 +71,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         this.routeMatcher = blade.routeMatcher();
         this.routeViewResolve = new RouteViewResolve(blade);
         this.staticFileHandler = new StaticFileHandler(blade);
+        this.sessionManager = blade.sessionManager();
+        this.sessionHandler = new SessionHandler(this.sessionManager);
     }
 
     @Override
@@ -79,7 +82,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
         }
 
-        Request request = new HttpRequest(ctx, fullHttpRequest);
+        Request request = new HttpRequest(ctx, fullHttpRequest, sessionManager);
         Response response = new HttpResponse(ctx, templateEngine);
         response.header(SERVER, "blade/" + Blade.VER);
 
@@ -90,8 +93,11 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         // 判断是否是静态资源
         try {
             if (isStaticFile(uri)) {
-                staticFileHandler.execute(ctx, request, response, uri);
+                staticFileHandler.handle(ctx, request, response);
             } else {
+
+                sessionHandler.handle(ctx, request, response);
+
                 WebContext.set(new WebContext(request, response));
                 // web hook
                 int interrupts = routeMatcher.getBefore(uri).stream()
