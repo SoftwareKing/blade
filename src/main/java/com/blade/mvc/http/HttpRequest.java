@@ -299,7 +299,7 @@ public class HttpRequest implements Request {
 
     @Override
     public Session session() {
-        Optional<String> sessionId = cookie(Const.SESSION_COOKIE_NAME);
+        Optional<String> sessionId = cookie(Const.ENV_KEY_SESSION_KEY);
         if (sessionId.isPresent()) {
             SessionManager sessionManager = WebContext.sessionManager();
             return sessionManager.getSession(sessionId.get());

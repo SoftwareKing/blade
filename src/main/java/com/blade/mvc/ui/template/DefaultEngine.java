@@ -21,10 +21,12 @@ import java.util.Map;
  */
 public class DefaultEngine implements TemplateEngine {
 
+    public static String TEMPLATE_PATH = "templates";
+
     @Override
     public void render(ModelAndView modelAndView, Writer writer) {
         String view = modelAndView.getView();
-        String viewPath = Const.CLASSPATH + "templates" + File.separator + view;
+        String viewPath = Const.CLASSPATH + TEMPLATE_PATH + File.separator + view;
         try {
             Request request = WebContext.request();
             String body = IOKit.readToString(viewPath);

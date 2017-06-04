@@ -39,7 +39,7 @@ public class RequestTest extends BaseTestCase {
         start(app.get("/cookie", (req, res) -> res.json(req.cookies())));
         String body = bodyToString("/cookie");
         Ason ason = new Ason(body);
-        Assert.notNull(ason.get(Const.SESSION_COOKIE_NAME), "session is null");
+        Assert.notNull(ason.get(Const.ENV_KEY_SESSION_KEY), "session is null");
     }
 
     @Test

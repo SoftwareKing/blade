@@ -21,6 +21,7 @@ import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.route.RouteBuilder;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.DefaultUI;
+import com.blade.mvc.ui.template.DefaultEngine;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -170,11 +171,6 @@ public class WebServer {
 
         blade.register(environment);
 
-        String statics = environment.get(Const.ENV_KEY_STATIC_DIRS, "");
-        if (StringKit.isNotBlank(statics)) {
-            blade.addStatics(statics.split(","));
-        }
-
     }
 
     private void initConfig() {
@@ -187,10 +183,23 @@ public class WebServer {
 
         DefaultUI.printBanner();
 
+        String statics = environment.get(Const.ENV_KEY_STATIC_DIRS, "");
+        if (StringKit.isNotBlank(statics)) {
+            blade.addStatics(statics.split(","));
+        }
+
         if (environment.getBoolean(Const.ENV_KEY_MONITOR_ENABLE, true)) {
             DefaultUI.registerStatus(blade);
         }
 
+        String templatePath = environment.get(Const.ENV_KEY_TEMPLATE_PATH, "templates");
+        if (templatePath.charAt(0) == '/') {
+            templatePath = templatePath.substring(1);
+        }
+        if (templatePath.endsWith("/")) {
+            templatePath = templatePath.substring(0, templatePath.length() - 1);
+        }
+        DefaultEngine.TEMPLATE_PATH = templatePath;
     }
 
     public void stop() {

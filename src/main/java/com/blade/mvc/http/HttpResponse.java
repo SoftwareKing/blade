@@ -302,7 +302,7 @@ public class HttpResponse implements Response {
     private HttpHeaders getDefaultHeader() {
         headers.set(DATE, DateKit.gmtDate());
         headers.set(CONTENT_TYPE, this.contentType);
-        headers.set(SERVER, "blade/" + Const.VER);
+        headers.set(SERVER, "blade/" + Const.VERSION);
         this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
         return headers;
     }

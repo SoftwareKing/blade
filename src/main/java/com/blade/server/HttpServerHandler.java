@@ -6,7 +6,6 @@ import com.blade.kit.DateKit;
 import com.blade.kit.StringKit;
 import com.blade.metric.Connection;
 import com.blade.metric.WebStatistics;
-import com.blade.mvc.Const;
 import com.blade.mvc.RouteHandler;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
@@ -32,6 +31,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.blade.mvc.Const.CONTENT_TYPE_TEXT;
+import static com.blade.mvc.Const.ENV_KEY_MONITOR_ENABLE;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
@@ -63,12 +64,12 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         this.statics = blade.getStatics();
 
         this.ci = ci;
-        this.openMonitor = blade.environment().getBoolean(Const.ENV_KEY_MONITOR_ENABLE, true);
+        this.openMonitor = blade.environment().getBoolean(ENV_KEY_MONITOR_ENABLE, true);
 
         this.routeMatcher = blade.routeMatcher();
         this.routeViewResolve = new RouteViewResolve(blade);
         this.staticFileHandler = new StaticFileHandler(blade);
-        this.sessionHandler = blade.sessionManager() != null ? new SessionHandler(blade.sessionManager()) : null;
+        this.sessionHandler = blade.sessionManager() != null ? new SessionHandler(blade.sessionManager(), blade.environment()) : null;
     }
 
     @Override
@@ -158,7 +159,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             String error = cause.getMessage();
             Response response = WebContext.response();
             boolean devMode = blade.devMode();
-            String contentType = null != response ? response.contentType() : Const.CONTENT_TYPE_TEXT;
+            String contentType = null != response ? response.contentType() : CONTENT_TYPE_TEXT;
             if (!devMode || !contentType.contains("html")) {
                 sendError(ctx, INTERNAL_SERVER_ERROR, error);
             }
@@ -188,7 +189,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         boolean isHtml = StringKit.isNotBlank(content);
         content = isHtml ? content : "Failure: " + status + "\r\n";
         FullHttpResponse response = new DefaultFullHttpResponse(
-                HTTP_1_1, status, Unpooled.copiedBuffer(content, CharsetUtil.UTF_8));
+                HTTP_1_1, status, Unpooled.wrappedBuffer(content.getBytes(CharsetUtil.UTF_8)));
         response.headers().set(CONTENT_TYPE, isHtml ? "text/html; charset=UTF-8" : "text/plain; charset=UTF-8");
         // Close the connection as soon as the error message is sent.
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
@@ -242,7 +243,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         httpResponse.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
         httpResponse.headers().set(DATE, DateKit.gmtDate());
         httpResponse.headers().setInt(CONTENT_LENGTH, 0);
-        ctx.writeAndFlush(httpResponse);
+        ctx.writeAndFlush(httpResponse).addListener(ChannelFutureListener.CLOSE);
     }
 
 }
