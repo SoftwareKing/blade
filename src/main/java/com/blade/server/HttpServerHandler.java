@@ -2,7 +2,6 @@ package com.blade.server;
 
 import com.blade.Blade;
 import com.blade.BladeException;
-import com.blade.kit.StringKit;
 import com.blade.metric.Connection;
 import com.blade.metric.WebStatistics;
 import com.blade.mvc.RouteHandler;
@@ -16,12 +15,13 @@ import com.blade.mvc.route.Route;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.DefaultUI;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
-import io.netty.util.CharsetUtil;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,13 +32,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.blade.mvc.Const.CONTENT_TYPE_TEXT;
-import static com.blade.mvc.Const.ENV_KEY_MONITOR_ENABLE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static com.blade.mvc.Const.*;
 import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * @author biezhi
@@ -60,12 +55,16 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     private final Connection ci;
     private final boolean openMonitor;
 
+    private String page404, page500;
+
     public HttpServerHandler(Blade blade, Connection ci) {
         this.blade = blade;
         this.statics = blade.getStatics();
 
         this.ci = ci;
         this.openMonitor = blade.environment().getBoolean(ENV_KEY_MONITOR_ENABLE, true);
+        this.page404 = blade.environment().get(ENV_KEY_PAGE_404, null);
+        this.page500 = blade.environment().get(ENV_KEY_PAGE_500, null);
 
         this.routeMatcher = blade.routeMatcher();
         this.routeViewResolve = new RouteViewResolve(blade);
@@ -115,7 +114,13 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         Route route = routeMatcher.lookupRoute(request.method(), uri);
         if (null == route) {
             // 404
-            sendError(ctx, NOT_FOUND, String.format(DefaultUI.VIEW_404, uri));
+            response.notFound();
+            String html = String.format(DefaultUI.VIEW_404, uri);
+            if (null != page404) {
+                response.render(page404);
+            } else {
+                response.html(html);
+            }
             return;
         }
         request.initPathParams(route.getPathParams());
@@ -153,25 +158,34 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             ctx.close();
             return;
         }
+        Response response = WebContext.response();
+        response.status(500);
+
         if (cause instanceof BladeException) {
             String error = cause.getMessage();
-            Response response = WebContext.response();
+
             boolean devMode = blade.devMode();
             String contentType = null != response ? response.contentType() : CONTENT_TYPE_TEXT;
-            if (!devMode || !contentType.contains("html")) {
-                sendError(ctx, INTERNAL_SERVER_ERROR, error);
-            }
+
             StringWriter sw = new StringWriter();
             PrintWriter writer = new PrintWriter(sw);
-            writer.write(String.format(DefaultUI.ERROR_START, cause.getClass() + " : " + cause.getMessage()));
-            writer.write("\r\n");
-            cause.printStackTrace(writer);
-            writer.println(DefaultUI.HTML_FOOTER);
-            error = sw.toString();
-            sendError(ctx, INTERNAL_SERVER_ERROR, error);
+
+            if (null != page500) {
+                cause.printStackTrace(writer);
+                WebContext.request().attribute("error", error);
+                WebContext.request().attribute("stackTrace", sw.toString());
+                response.render(page500);
+            } else {
+                writer.write(String.format(DefaultUI.ERROR_START, cause.getClass() + " : " + cause.getMessage()));
+                writer.write("\r\n");
+                cause.printStackTrace(writer);
+                writer.println(DefaultUI.HTML_FOOTER);
+                error = sw.toString();
+                response.html(error);
+            }
             return;
         }
-        sendError(ctx, INTERNAL_SERVER_ERROR);
+        response.status(500).body("Internal Server Error");
     }
 
     private boolean isStaticFile(String uri) {
@@ -179,19 +193,19 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         return result.isPresent();
     }
 
-    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
-        sendError(ctx, status, "");
-    }
-
-    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status, String content) {
-        boolean isHtml = StringKit.isNotBlank(content);
-        content = isHtml ? content : "Failure: " + status + "\r\n";
-        FullHttpResponse response = new DefaultFullHttpResponse(
-                HTTP_1_1, status, Unpooled.wrappedBuffer(content.getBytes(CharsetUtil.UTF_8)));
-        response.headers().set(CONTENT_TYPE, isHtml ? "text/html; charset=UTF-8" : "text/plain; charset=UTF-8");
-        // Close the connection as soon as the error message is sent.
-        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-    }
+//    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
+//        sendError(ctx, status, "");
+//    }
+//
+//    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status, String content) {
+//        boolean isHtml = StringKit.isNotBlank(content);
+//        content = isHtml ? content : "Failure: " + status + "\r\n";
+//        FullHttpResponse response = new DefaultFullHttpResponse(
+//                HTTP_1_1, status, Unpooled.wrappedBuffer(content.getBytes(CharsetUtil.UTF_8)));
+//        response.headers().set(CONTENT_TYPE, isHtml ? "text/html; charset=UTF-8" : "text/plain; charset=UTF-8");
+//        // Close the connection as soon as the error message is sent.
+//        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+//    }
 
     /**
      * Actual routing method execution
