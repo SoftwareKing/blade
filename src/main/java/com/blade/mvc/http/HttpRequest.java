@@ -3,9 +3,8 @@ package com.blade.mvc.http;
 import com.blade.BladeException;
 import com.blade.kit.StringKit;
 import com.blade.kit.WebKit;
-import com.blade.mvc.Const;
-import com.blade.mvc.WebContext;
 import com.blade.mvc.multipart.FileItem;
+import com.blade.server.SessionHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -30,8 +29,6 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.*;
  */
 public class HttpRequest implements Request {
 
-    // 5MB
-//    private static final HttpDataFactory HTTP_DATA_FACTORY = new DefaultHttpDataFactory(true);
     private static final HttpDataFactory HTTP_DATA_FACTORY = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE); // Disk if size exceed
 
     static {
@@ -48,26 +45,30 @@ public class HttpRequest implements Request {
 
     private ByteBuf body;
 
+    private String host;
+    private String uri;
+    private String url;
+    private String protocol;
+    private String method;
     private String contextPath;
+    private boolean keepAlive;
 
-    private ChannelHandlerContext ctx;
-    private FullHttpRequest fullHttpRequest;
+    private SessionHandler sessionHandler;
 
     private Map<String, String> headers = new HashMap<>();
     private Map<String, Object> attrs = new HashMap<>();
     private Map<String, List<String>> parameters = new HashMap<>();
     private Map<String, String> pathParams = new HashMap<>();
     private Map<String, Cookie> cookies = new HashMap<>();
-
     private Map<String, FileItem> fileItems = new HashMap<>();
 
-    public HttpRequest(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) {
-        this.ctx = ctx;
-        this.fullHttpRequest = fullHttpRequest;
-        this.init();
+
+    public HttpRequest() {
+
     }
 
-    private void init() {
+
+    void init(FullHttpRequest fullHttpRequest) {
         // headers
         fullHttpRequest.headers().forEach((header) -> headers.put(header.getKey(), header.getValue()));
 
@@ -157,18 +158,17 @@ public class HttpRequest implements Request {
 
     @Override
     public String host() {
-        String remoteAddr = ctx.channel().remoteAddress().toString();
-        return StringKit.isNotBlank(remoteAddr) ? remoteAddr.substring(1) : "Unknown";
+        return this.host;
     }
 
     @Override
     public String uri() {
-        return new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).path();
+        return this.uri;
     }
 
     @Override
     public String url() {
-        return new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).uri();
+        return this.url;
     }
 
     @Override
@@ -178,7 +178,7 @@ public class HttpRequest implements Request {
 
     @Override
     public String protocol() {
-        return fullHttpRequest.protocolVersion().text();
+        return this.protocol;
     }
 
     @Override
@@ -210,7 +210,7 @@ public class HttpRequest implements Request {
 
     @Override
     public String queryString() {
-        return new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).uri();
+        return this.url;
     }
 
     @Override
@@ -284,7 +284,7 @@ public class HttpRequest implements Request {
 
     @Override
     public String method() {
-        return fullHttpRequest.method().name();
+        return this.method;
     }
 
     @Override
@@ -299,12 +299,7 @@ public class HttpRequest implements Request {
 
     @Override
     public Session session() {
-        Optional<String> sessionId = cookie(Const.ENV_KEY_SESSION_KEY);
-        if (sessionId.isPresent()) {
-            SessionManager sessionManager = WebContext.sessionManager();
-            return sessionManager.getSession(sessionId.get());
-        }
-        return null;
+        return sessionHandler.createSession(this);
     }
 
     @Override
@@ -379,7 +374,7 @@ public class HttpRequest implements Request {
 
     @Override
     public boolean keepAlive() {
-        return HttpUtil.isKeepAlive(fullHttpRequest);
+        return this.keepAlive;
     }
 
     @Override
@@ -417,6 +412,20 @@ public class HttpRequest implements Request {
     @Override
     public String bodyToString() {
         return this.body.toString(CharsetUtil.UTF_8);
+    }
+
+    public static HttpRequest build(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest, SessionHandler sessionHandler) {
+        HttpRequest httpRequest = new HttpRequest();
+        httpRequest.sessionHandler = sessionHandler;
+        httpRequest.keepAlive = HttpUtil.isKeepAlive(fullHttpRequest);
+        String remoteAddr = ctx.channel().remoteAddress().toString();
+        httpRequest.host = StringKit.isNotBlank(remoteAddr) ? remoteAddr.substring(1) : "Unknown";
+        httpRequest.uri = new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).path();
+        httpRequest.url = new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).uri();
+        httpRequest.protocol = fullHttpRequest.protocolVersion().text();
+        httpRequest.method = fullHttpRequest.method().name();
+        httpRequest.init(fullHttpRequest);
+        return httpRequest;
     }
 
 }

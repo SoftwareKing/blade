@@ -2,7 +2,6 @@ package com.blade.server;
 
 import com.blade.Blade;
 import com.blade.BladeException;
-import com.blade.kit.DateKit;
 import com.blade.kit.StringKit;
 import com.blade.metric.Connection;
 import com.blade.metric.WebStatistics;
@@ -11,7 +10,8 @@ import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
 import com.blade.mvc.http.HttpRequest;
 import com.blade.mvc.http.HttpResponse;
-import com.blade.mvc.http.*;
+import com.blade.mvc.http.Request;
+import com.blade.mvc.http.Response;
 import com.blade.mvc.route.Route;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.DefaultUI;
@@ -28,12 +28,13 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static com.blade.mvc.Const.CONTENT_TYPE_TEXT;
 import static com.blade.mvc.Const.ENV_KEY_MONITOR_ENABLE;
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
@@ -83,6 +84,51 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     private FullHttpRequest fullHttpRequest;
 
     @Override
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) throws Exception {
+
+        this.fullHttpRequest = fullHttpRequest;
+
+        if (is100ContinueExpected(fullHttpRequest)) {
+            ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
+        }
+
+        Request request = HttpRequest.build(ctx, fullHttpRequest, sessionHandler);
+        Response response = HttpResponse.build(ctx, blade.templateEngine());
+
+        // reuqest uri
+        String uri = request.uri();
+        log.debug("{}\t{}\t{}", request.protocol(), request.method(), uri);
+
+        if (isStaticFile(uri)) {
+            staticFileHandler.handle(ctx, request, response);
+            return;
+        }
+
+        // write session
+        WebContext.set(new WebContext(request, response));
+
+        // web hook
+        if (!invokeHook(routeMatcher.getBefore(uri), request, response)) {
+            return;
+        }
+
+        Route route = routeMatcher.lookupRoute(request.method(), uri);
+        if (null == route) {
+            // 404
+            sendError(ctx, NOT_FOUND, String.format(DefaultUI.VIEW_404, uri));
+            return;
+        }
+        request.initPathParams(route.getPathParams());
+        // execute
+        this.routeHandle(request, response, route);
+
+        invokeHook(routeMatcher.getAfter(uri), request, response);
+
+        this.sendFinish(response);
+        WebContext.remove();
+    }
+
+    @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
         if (openMonitor) {
@@ -100,57 +146,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) throws Exception {
-
-        if (is100ContinueExpected(fullHttpRequest)) {
-            ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
-        }
-
-        this.fullHttpRequest = fullHttpRequest;
-
-        Request request = new HttpRequest(ctx, fullHttpRequest);
-        Response response = new HttpResponse(ctx, blade.templateEngine());
-
-        // reuqest uri
-        String uri = request.uri();
-        log.debug("{}\t{}\t{}", request.protocol(), request.method(), uri);
-
-        if (isStaticFile(uri)) {
-            staticFileHandler.handle(ctx, request, response);
-            return;
-        }
-
-        // write session
-        SessionManager sessionManager = null != sessionHandler ? sessionHandler.handle(ctx, request, response) : null;
-
-        WebContext.set(new WebContext(sessionManager, request, response));
-
-        // web hook
-        int interrupts = routeMatcher.getBefore(uri).stream().mapToInt(route -> this.invokeHook(request, response, route)).sum();
-
-        if (interrupts > 0) return;
-
-        Route route = routeMatcher.lookupRoute(request.method(), uri);
-        if (null == route) {
-            // 404
-            sendError(ctx, NOT_FOUND, String.format(DefaultUI.VIEW_404, uri));
-            return;
-        }
-
-        request.initPathParams(route.getPathParams());
-        // execute
-        this.routeHandle(request, response, route);
-        interrupts = routeMatcher.getAfter(uri).stream().mapToInt(r -> this.invokeHook(request, response, r)).sum();
-        if (interrupts > 0) return;
-
-        this.sendFinish(ctx, response);
-        WebContext.remove();
-    }
-
-
-    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("", cause);
+        log.error("error", cause);
+
         if (!ctx.channel().isActive()) {
             ctx.close();
             return;
@@ -219,31 +217,31 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     }
 
     /**
-     * Methods to perform the hooks
+     * invoke hooks
      *
-     * @param request  request object
-     * @param response response object
-     * @return Return execute is ok
+     * @param hooks
+     * @param request
+     * @param response
+     * @return
      */
-    private int invokeHook(Request request, Response response, Route route) {
-        if (route.getTargetType() == RouteHandler.class) {
-            RouteHandler routeHandler = (RouteHandler) route.getTarget();
-            routeHandler.handle(request, response);
-            return 0;
-        } else {
-            return routeViewResolve.invokeHook(request, response, route) ? 0 : 1;
+    private boolean invokeHook(List<Route> hooks, Request request, Response response) {
+        for (Route route : hooks) {
+            if (route.getTargetType() == RouteHandler.class) {
+                RouteHandler routeHandler = (RouteHandler) route.getTarget();
+                routeHandler.handle(request, response);
+            } else {
+                boolean flag = routeViewResolve.invokeHook(request, response, route);
+                if (!flag) return false;
+            }
         }
+        return true;
     }
 
-    private void sendFinish(ChannelHandlerContext ctx, Response response) {
+    private void sendFinish(Response response) {
         if (response.isCommit()) {
             return;
         }
-        FullHttpResponse httpResponse = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(response.statusCode()), Unpooled.EMPTY_BUFFER);
-        httpResponse.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
-        httpResponse.headers().set(DATE, DateKit.gmtDate());
-        httpResponse.headers().setInt(CONTENT_LENGTH, 0);
-        ctx.writeAndFlush(httpResponse).addListener(ChannelFutureListener.CLOSE);
+        response.body(Unpooled.EMPTY_BUFFER);
     }
 
 }

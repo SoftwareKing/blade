@@ -2,8 +2,8 @@ package com.blade.server;
 
 import com.blade.Environment;
 import com.blade.kit.UUID;
+import com.blade.mvc.WebContext;
 import com.blade.mvc.http.*;
-import io.netty.channel.ChannelHandlerContext;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -15,7 +15,7 @@ import static com.blade.mvc.Const.ENV_KEY_SESSION_TIMEOUT;
  * @author biezhi
  *         2017/6/3
  */
-public class SessionHandler implements RequestHandler<SessionManager> {
+public class SessionHandler {
 
     private final SessionManager sessionManager;
     private final String sessionKey;
@@ -27,20 +27,20 @@ public class SessionHandler implements RequestHandler<SessionManager> {
         this.timeout = environment.getInt(ENV_KEY_SESSION_TIMEOUT, 1800);
     }
 
-    @Override
-    public SessionManager handle(ChannelHandlerContext ctx, Request request, Response response) {
+    public Session createSession(Request request) {
         Session session = getSession(request);
+        Response response = WebContext.response();
         if (null == session) {
-            createSession(request, response);
+            return createSession(request, response);
         } else {
             if (session.expired() < Instant.now().getEpochSecond()) {
                 removeSession(session, response);
             }
         }
-        return sessionManager;
+        return session;
     }
 
-    private void createSession(Request request, Response response) {
+    private Session createSession(Request request, Response response) {
 
         long now = Instant.now().getEpochSecond();
         long expired = now + timeout;
@@ -58,9 +58,11 @@ public class SessionHandler implements RequestHandler<SessionManager> {
 
         request.cookie(cookie);
         response.cookie(cookie);
+        return session;
     }
 
     private void removeSession(Session session, Response response) {
+        session.attributes().clear();
         sessionManager.remove(session);
     }
 

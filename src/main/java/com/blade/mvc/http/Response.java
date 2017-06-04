@@ -2,8 +2,10 @@ package com.blade.mvc.http;
 
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.RestResponse;
+import io.netty.buffer.ByteBuf;
 
 import java.io.File;
+import java.nio.Buffer;
 import java.util.Map;
 
 /**
@@ -172,6 +174,8 @@ public interface Response {
     void body(String data);
 
     void body(byte[] data);
+
+    void body(ByteBuf byteBuf);
 
     /**
      * download some file to clinet

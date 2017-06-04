@@ -20,6 +20,9 @@ import org.objectweb.asm.*;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ASM Tools
@@ -28,6 +31,8 @@ import java.lang.reflect.Modifier;
  * @since 1.6.6
  */
 public final class AsmKit {
+
+    private static final Map<Method, String[]> pool = new ConcurrentHashMap<>();
 
     /**
      * <p>
@@ -60,6 +65,10 @@ public final class AsmKit {
      * @return
      */
     public static String[] getMethodParamNames(final Method m) throws IOException {
+        if (pool.containsKey(m)) {
+            return pool.get(m);
+        }
+
         final String[] paramNames = new String[m.getParameterTypes().length];
         final String n = m.getDeclaringClass().getName();
         ClassReader cr = null;
@@ -96,6 +105,7 @@ public final class AsmKit {
                 };
             }
         }, 0);
+        pool.put(m, paramNames);
         return paramNames;
     }
 

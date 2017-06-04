@@ -13,8 +13,8 @@ public class Hook1 implements WebHook {
 
     @Override
     public boolean before(Invoker invoker) {
-        System.out.println("进入web hook");
-        System.out.println(invoker.request().contentType());
+//        System.out.println("进入web hook");
+//        System.out.println(invoker.request().contentType());
         return invoker.next();
     }
 

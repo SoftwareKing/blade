@@ -15,7 +15,7 @@ public class Application {
 
     public static void main(String[] args) {
 
-//        System.setProperty("com.blade.logger.defaultLogLevel", "DEBUG");
+//        System.setProperty("com.blade.logger.defaultLogLevel", "debug");
 
         map.put("name", "blade");
         map.put("jdk", 1.8);

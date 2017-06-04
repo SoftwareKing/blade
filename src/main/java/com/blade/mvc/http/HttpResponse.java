@@ -28,6 +28,7 @@ import java.io.RandomAccessFile;
 import java.io.StringWriter;
 import java.util.*;
 
+import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -53,9 +54,7 @@ public class HttpResponse implements Response {
 
     private TemplateEngine templateEngine;
 
-    public HttpResponse(ChannelHandlerContext ctx, TemplateEngine templateEngine) {
-        this.ctx = ctx;
-        this.templateEngine = templateEngine;
+    public HttpResponse() {
     }
 
     @Override
@@ -218,6 +217,12 @@ public class HttpResponse implements Response {
     }
 
     @Override
+    public void body(ByteBuf byteBuf) {
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), byteBuf);
+        this.send(response);
+    }
+
+    @Override
     public void donwload(String fileName, File file) throws Exception {
         try {
             if (null == file || !file.exists() || !file.isFile()) {
@@ -290,12 +295,12 @@ public class HttpResponse implements Response {
         boolean keepAlive = WebContext.request().keepAlive();
         // Add 'Content-Length' header only for a keep-alive connection.
         response.headers().set(HttpHeaders.Names.CONTENT_LENGTH, response.content().readableBytes());
-        if (keepAlive) {
-            // Add keep alive header as per:
-            // - http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
-            response.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+        if (!keepAlive) {
+            ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+        } else {
+            response.headers().set(CONNECTION, KEEP_ALIVE);
+            ctx.write(response);
         }
-        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         isCommit = true;
     }
 
@@ -305,6 +310,13 @@ public class HttpResponse implements Response {
         headers.set(SERVER, "blade/" + Const.VERSION);
         this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
         return headers;
+    }
+
+    public static HttpResponse build(ChannelHandlerContext ctx, TemplateEngine templateEngine) {
+        HttpResponse httpResponse = new HttpResponse();
+        httpResponse.templateEngine = templateEngine;
+        httpResponse.ctx = ctx;
+        return httpResponse;
     }
 
 }

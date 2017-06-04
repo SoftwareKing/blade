@@ -26,7 +26,7 @@ public class IndexController {
 
     @GetRoute(values = "/hello")
     public void index(Response response) {
-        aService.sayHi();
+//        aService.sayHi();
         response.text("hello world!");
     }
 
@@ -70,7 +70,7 @@ public class IndexController {
 
     @GetRoute(values = "empty")
     public void empty() {
-        System.out.println("empty request");
+//        System.out.println("empty request");
     }
 
     @GetRoute(values = "download")

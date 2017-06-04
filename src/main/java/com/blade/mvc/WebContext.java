@@ -3,7 +3,6 @@ package com.blade.mvc;
 import com.blade.Blade;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
-import com.blade.mvc.http.SessionManager;
 import io.netty.util.concurrent.FastThreadLocal;
 
 /**
@@ -23,10 +22,8 @@ public class WebContext {
 
     private Request request;
     private Response response;
-    private SessionManager sessionManager;
 
-    public WebContext(SessionManager sessionManager, Request request, Response response) {
-        this.sessionManager = sessionManager;
+    public WebContext(Request request, Response response) {
         this.request = request;
         this.response = response;
     }
@@ -51,11 +48,6 @@ public class WebContext {
     public static Response response() {
         WebContext webContext = get();
         return null != webContext ? webContext.response : null;
-    }
-
-    public static SessionManager sessionManager() {
-        WebContext webContext = get();
-        return null != webContext ? webContext.sessionManager : null;
     }
 
     public static void init(Blade blade_, String contextPath_, boolean ssl_) {
