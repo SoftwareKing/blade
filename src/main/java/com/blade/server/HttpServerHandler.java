@@ -184,7 +184,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             }
             return;
         }
-        response.status(500).body("Internal Server Error");
+        response.body("Internal Server Error");
     }
 
     private boolean isStaticFile(String uri) {
