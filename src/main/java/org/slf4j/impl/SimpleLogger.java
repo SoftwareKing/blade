@@ -187,7 +187,7 @@ public class SimpleLogger extends MarkerIgnoringBase {
      * All system properties used by <code>SimpleLogger</code> start with this
      * prefix
      */
-    public static final String SYSTEM_PREFIX = "com.blade.";
+    public static final String SYSTEM_PREFIX = "com.blade.logger.";
 
     public static final String LOG_KEY_PREFIX = SimpleLogger.SYSTEM_PREFIX + "impl.";
 

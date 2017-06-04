@@ -14,16 +14,17 @@ public class BaseTestCase {
 
     protected RouteHandler OK_HANDLER = (req, res) -> res.text("OK");
     protected Blade app;
-    private String origin = "http://127.0.0.1:9000";
+    private String origin = "http://127.0.0.1:9011";
     protected String firefoxUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:53.0) Gecko/20100101 Firefox/53.0";
 
     @Before
     public void setup() throws Exception {
+        System.setProperty("com.blade.logger.defaultLogLevel", "DEBUG");
         app = Blade.me();
     }
 
     protected void start(Blade blade) {
-        blade.start().await();
+        blade.listen(9011).start().await();
     }
 
     @After

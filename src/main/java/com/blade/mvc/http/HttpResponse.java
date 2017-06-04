@@ -44,7 +44,6 @@ public class HttpResponse implements Response {
     private ChannelHandlerContext ctx;
 
     private String contentType = Const.CONTENT_TYPE_HTML;
-    private HttpVersion httpVersion = HttpVersion.HTTP_1_1;
     private HttpResponseStatus status = HttpResponseStatus.OK;
     private Object content = Unpooled.EMPTY_BUFFER;
     private HttpHeaders headers = new DefaultHttpHeaders();
@@ -182,20 +181,20 @@ public class HttpResponse implements Response {
 
     @Override
     public void text(String text) {
-        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(text, CharsetUtil.UTF_8));
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(text.getBytes(CharsetUtil.UTF_8)));
         this.contentType = Const.CONTENT_TYPE_TEXT;
         this.send(response);
     }
 
     @Override
     public void html(String html) {
-        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(html, CharsetUtil.UTF_8));
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(html.getBytes(CharsetUtil.UTF_8)));
         this.send(response);
     }
 
     @Override
     public void json(String json) {
-        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(json, CharsetUtil.UTF_8));
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(json.getBytes(CharsetUtil.UTF_8)));
         if (!WebContext.request().isIE()) {
             this.contentType = Const.CONTENT_TYPE_JSON;
         }
@@ -209,7 +208,13 @@ public class HttpResponse implements Response {
 
     @Override
     public void body(String data) {
-        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), Unpooled.copiedBuffer(data, CharsetUtil.UTF_8));
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(data.getBytes(CharsetUtil.UTF_8)));
+        this.send(response);
+    }
+
+    @Override
+    public void body(byte[] data) {
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(data));
         this.send(response);
     }
 
@@ -262,14 +267,14 @@ public class HttpResponse implements Response {
         StringWriter sw = new StringWriter();
         templateEngine.render(modelAndView, sw);
         ByteBuf buffer = Unpooled.wrappedBuffer(sw.toString().getBytes());
-        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.valueOf(statusCode), buffer);
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), buffer);
         this.send(response);
     }
 
     @Override
     public void redirect(String newUri) {
         headers.set(HttpHeaders.Names.LOCATION, newUri);
-        FullHttpResponse response = new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.FOUND);
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.FOUND);
         this.send(response);
         if (WebContext.blade().openMonitor()) {
             WebStatistics.me().registerRedirect(newUri);
@@ -284,17 +289,14 @@ public class HttpResponse implements Response {
     private void send(FullHttpResponse response) {
         response.headers().add(getDefaultHeader());
         boolean keepAlive = WebContext.request().keepAlive();
-        if (!keepAlive) {
-            // If keep-alive is off, close the connection once the content is fully written.
-            ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-        } else {
-            // Add 'Content-Length' header only for a keep-alive connection.
-            response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
+        // Add 'Content-Length' header only for a keep-alive connection.
+        response.headers().set(HttpHeaders.Names.CONTENT_LENGTH, response.content().readableBytes());
+        if (keepAlive) {
             // Add keep alive header as per:
             // - http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
-            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
-            ctx.writeAndFlush(response);
+            response.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
         }
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         isCommit = true;
     }
 
@@ -305,4 +307,5 @@ public class HttpResponse implements Response {
         this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
         return headers;
     }
+
 }

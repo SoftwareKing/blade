@@ -4,6 +4,7 @@ import com.blade.ioc.annotation.Inject;
 import com.blade.mvc.Const;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -88,8 +89,8 @@ public final class DateKit {
     }
 
     public static Date toDate(String time, String pattern) {
-        LocalDateTime formatted = LocalDateTime.parse(time, DateTimeFormatter.ofPattern(pattern));
-        return Date.from(formatted.atZone(ZoneId.systemDefault()).toInstant());
+        LocalDate formatted = LocalDate.parse(time, DateTimeFormatter.ofPattern(pattern));
+        return Date.from(Instant.from(formatted.atStartOfDay(ZoneId.systemDefault())));
     }
 
     public static Date toDate(long unixTime) {

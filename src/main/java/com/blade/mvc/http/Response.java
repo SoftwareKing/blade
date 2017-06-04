@@ -171,6 +171,8 @@ public interface Response {
      */
     void body(String data);
 
+    void body(byte[] data);
+
     /**
      * download some file to clinet
      *

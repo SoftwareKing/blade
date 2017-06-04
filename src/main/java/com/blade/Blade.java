@@ -37,7 +37,7 @@ public class Blade {
     private String appName = "blade";
     private int port = 9000;
 
-    private boolean fileList = false;
+    private boolean showFileList = false;
     private boolean gzipEnable = false;
     private boolean started = false;
     private boolean devMode = true;
@@ -132,12 +132,12 @@ public class Blade {
     }
 
     public Blade showFileList(boolean fileList) {
-        this.fileList = fileList;
+        this.showFileList = fileList;
         return this;
     }
 
     public boolean showFileList() {
-        return this.fileList;
+        return this.showFileList;
     }
 
     public boolean gzip() {

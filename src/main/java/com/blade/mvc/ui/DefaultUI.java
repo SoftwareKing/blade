@@ -31,8 +31,6 @@ public interface DefaultUI {
             .endStyle()
             .add("<div class='info'><h3>%s</h3></div><div class='isa_error'><pre>").toString();
 
-    WebStatistics WEB_STATISTICS = WebStatistics.me();
-
     Locale locale = Locale.getDefault().getLanguage().equals("zh") ? Locale.CHINESE : Locale.ENGLISH;
     ResourceBundle bundle = ResourceBundle.getBundle("i18n", locale);
 
@@ -50,39 +48,41 @@ public interface DefaultUI {
     }
 
     public static void registerStatus(Blade blade) {
+
+        WebStatistics webStatistics = WebStatistics.me();
         blade.get("/blade/monitor", ((request, response) -> {
             HtmlCreator htmlCreator = new HtmlCreator();
             htmlCreator.title(getKey(MonitorEnum.statistics));
             htmlCreator.h1(getKey(MonitorEnum.statistics));
 
             htmlCreator.startP().addBold(getKey(MonitorEnum.total_requests))
-                    .add("：" + WEB_STATISTICS.getNumberOfRequests()).endP();
+                    .add("：" + webStatistics.getNumberOfRequests()).endP();
 
             htmlCreator.startP().addBold(getKey(MonitorEnum.unique_requests))
-                    .add("：" + WEB_STATISTICS.getNumberOfUniqueRequests()).endP();
+                    .add("：" + webStatistics.getNumberOfUniqueRequests()).endP();
 
             htmlCreator.startP().addBold(getKey(MonitorEnum.open_connections))
-                    .add("：" + WEB_STATISTICS.getConnectionCount()).endP();
+                    .add("：" + webStatistics.getConnectionCount()).endP();
 
             htmlCreator.hr();
             htmlCreator.h2(getKey(MonitorEnum.requests));
-            if (WEB_STATISTICS.getIpRequestsAsStrings().size() == 0) {
+            if (webStatistics.getIpRequestsAsStrings().size() == 0) {
                 htmlCreator.paragraph(getKey(MonitorEnum.no_completed_requests));
             } else {
                 List<String> requestsTableHeaders = Arrays.asList(getKey(MonitorEnum.ip), getKey(MonitorEnum.requests), getKey(MonitorEnum.last_request));
                 htmlCreator.addTableWithHeaders(requestsTableHeaders);
-                WEB_STATISTICS.getIpRequestsAsStrings().forEach(htmlCreator::addRowToTable);
+                webStatistics.getIpRequestsAsStrings().forEach(htmlCreator::addRowToTable);
                 htmlCreator.endTable();
             }
 
             htmlCreator.hr();
             htmlCreator.h2(getKey(MonitorEnum.redirects));
-            if (WEB_STATISTICS.getRedirectsAsStrings().size() == 0) {
+            if (webStatistics.getRedirectsAsStrings().size() == 0) {
                 htmlCreator.paragraph(getKey(MonitorEnum.no_redirects));
             } else {
                 List<String> redirectsTableHeaders = Arrays.asList(getKey(MonitorEnum.dest_url), getKey(MonitorEnum.redirect_num));
                 htmlCreator.addTableWithHeaders(redirectsTableHeaders);
-                WEB_STATISTICS.getRedirectsAsStrings().forEach(htmlCreator::addRowToTable);
+                webStatistics.getRedirectsAsStrings().forEach(htmlCreator::addRowToTable);
                 htmlCreator.endTable();
             }
 
@@ -94,7 +94,7 @@ public interface DefaultUI {
                     getKey(MonitorEnum.sent), getKey(MonitorEnum.received), getKey(MonitorEnum.speed));
 
             htmlCreator.addTableWithHeaders(connectionsTableHeaders);
-            WEB_STATISTICS.getConnectionsAsStrings().forEach(htmlCreator::addRowToTable);
+            webStatistics.getConnectionsAsStrings().forEach(htmlCreator::addRowToTable);
             htmlCreator.endTable();
 
             htmlCreator.startStyle().centerHeadings().styleTables().endStyle().br().br().br();

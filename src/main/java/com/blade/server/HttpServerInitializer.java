@@ -28,18 +28,17 @@ public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
 
-        Connection ci = new Connection();
-        ci.setIp(WebStatistics.getIpFromChannel(ch));
-        ci.setEstablished(LocalDateTime.now());
-        WebStatistics.me().addConnectionInfo(ci);
-
-
         ChannelPipeline p = ch.pipeline();
         if (sslCtx != null) {
             p.addLast(sslCtx.newHandler(ch.alloc()));
         }
 
+        Connection ci = null;
         if (blade.openMonitor()) {
+            ci = new Connection();
+            ci.setIp(WebStatistics.getIpFromChannel(ch));
+            ci.setEstablished(LocalDateTime.now());
+            WebStatistics.me().addConnectionInfo(ci);
             p.addLast(new ChannelTrafficCounter(0, ci));
         }
 

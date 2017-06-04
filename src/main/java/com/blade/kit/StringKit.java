@@ -40,7 +40,12 @@ public final class StringKit {
     }
 
     public static boolean isNumber(String string) {
-        return string.chars().filter(StringKit::notIsDigit).count() > 0;
+        try {
+            double d = Double.parseDouble(string);
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+        return true;
     }
 
     private static boolean notIsDigit(int c) {

@@ -10,6 +10,8 @@ import com.blade.mvc.Const;
 import com.blade.mvc.RouteHandler;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
+import com.blade.mvc.http.HttpRequest;
+import com.blade.mvc.http.HttpResponse;
 import com.blade.mvc.http.*;
 import com.blade.mvc.route.Route;
 import com.blade.mvc.route.RouteMatcher;
@@ -19,10 +21,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpUtil.is100ContinueExpected;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -47,22 +47,23 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
 
     public static final Logger log = LoggerFactory.getLogger(HttpServerHandler.class);
 
-    private Blade blade;
-    private RouteMatcher routeMatcher;
-    private RouteViewResolve routeViewResolve;
-    private Set<String> statics;
+    private final Blade blade;
+    private final RouteMatcher routeMatcher;
+    private final RouteViewResolve routeViewResolve;
+    private final Set<String> statics;
 
-    private StaticFileHandler staticFileHandler;
-    private SessionHandler sessionHandler;
+    private final StaticFileHandler staticFileHandler;
+    private final SessionHandler sessionHandler;
 
-    private final WebStatistics statistics = WebStatistics.me();
     private final Connection ci;
+    private final boolean openMonitor;
 
     public HttpServerHandler(Blade blade, Connection ci) {
         this.blade = blade;
         this.statics = blade.getStatics();
 
         this.ci = ci;
+        this.openMonitor = blade.openMonitor();
 
         this.routeMatcher = blade.routeMatcher();
         this.routeViewResolve = new RouteViewResolve(blade);
@@ -73,7 +74,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         super.channelRegistered(ctx);
-        statistics.addChannel(ctx.channel());
+        if (openMonitor) {
+            WebStatistics.me().addChannel(ctx.channel());
+        }
     }
 
     private FullHttpRequest fullHttpRequest;
@@ -81,22 +84,25 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
-        /* Writing response to request is over. Record request in WEB_STATISTICS */
-        statistics.registerRequestFromIp(WebStatistics.getIpFromChannel(ctx.channel()), LocalDateTime.now());
-        if (fullHttpRequest != null) {
-            ci.addUri(fullHttpRequest.getUri());
+        if (openMonitor) {
+            WebStatistics.me().registerRequestFromIp(WebStatistics.getIpFromChannel(ctx.channel()), LocalDateTime.now());
+            if (fullHttpRequest != null) {
+                ci.addUri(fullHttpRequest.getUri());
+            }
         }
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
         fullHttpRequest = null;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) throws Exception {
+
         if (is100ContinueExpected(fullHttpRequest)) {
-            ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+            ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
         }
 
         this.fullHttpRequest = fullHttpRequest;
@@ -113,13 +119,14 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             return;
         }
 
-        // execute session
+        // write session
         SessionManager sessionManager = null != sessionHandler ? sessionHandler.handle(ctx, request, response) : null;
 
         WebContext.set(new WebContext(sessionManager, request, response));
 
         // web hook
         int interrupts = routeMatcher.getBefore(uri).stream().mapToInt(route -> this.invokeHook(request, response, route)).sum();
+
         if (interrupts > 0) return;
 
         Route route = routeMatcher.lookupRoute(request.method(), uri);
@@ -132,12 +139,13 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         request.initPathParams(route.getPathParams());
         // execute
         this.routeHandle(request, response, route);
-        routeMatcher.getAfter(uri).forEach(r -> this.invokeHook(request, response, r));
+        interrupts = routeMatcher.getAfter(uri).stream().mapToInt(r -> this.invokeHook(request, response, r)).sum();
+        if (interrupts > 0) return;
+
         this.sendFinish(ctx, response);
-
         WebContext.remove();
-
     }
+
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
