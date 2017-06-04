@@ -164,7 +164,6 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         if (cause instanceof BladeException) {
             String error = cause.getMessage();
 
-            boolean devMode = blade.devMode();
             String contentType = null != response ? response.contentType() : CONTENT_TYPE_TEXT;
 
             StringWriter sw = new StringWriter();
