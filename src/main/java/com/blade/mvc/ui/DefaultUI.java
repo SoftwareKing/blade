@@ -2,6 +2,7 @@ package com.blade.mvc.ui;
 
 import com.blade.Blade;
 import com.blade.metric.WebStatistics;
+import com.blade.mvc.Const;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.ResourceBundle;
  */
 public interface DefaultUI {
 
-    String HTML_FOOTER = "<hr/><br/><p><center><a href='https://github.com/biezhi/blade' target='_blank'>Blade-" + Blade.VER + "</a></center></p>";
+    String HTML_FOOTER = "<hr/><br/><p><center><a href='https://github.com/biezhi/blade' target='_blank'>Blade-" + Const.VER + "</a></center></p>";
 
     /**
      * server 500
@@ -115,7 +116,7 @@ public interface DefaultUI {
         for (String s : banner) {
             text.append("\r\n\t\t" + s);
         }
-        text.append("\r\n\t\t :: Blade :: (v" + Blade.VER + ")\r\n");
+        text.append("\r\n\t\t :: Blade :: (v" + Const.VER + ")\r\n");
         System.out.println(text.toString());
     }
 

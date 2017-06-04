@@ -5,7 +5,6 @@ import com.blade.ioc.SimpleIoc;
 import com.blade.lifecycle.Event;
 import com.blade.lifecycle.EventListener;
 import com.blade.lifecycle.EventManager;
-import com.blade.mvc.Const;
 import com.blade.mvc.RouteHandler;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.http.SessionManager;
@@ -23,6 +22,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
+import static com.blade.mvc.Const.*;
+
 /**
  * Blade Core
  *
@@ -33,27 +34,20 @@ public class Blade {
 
     private static final Logger log = LoggerFactory.getLogger(Blade.class);
 
-    public static final String VER = "2.0.0-SNAPSHOT";
-    private String appName = "blade";
-    private int port = 9000;
-
-    private boolean showFileList = false;
-    private boolean gzipEnable = false;
     private boolean started = false;
-    private boolean devMode = true;
-    private boolean openMonitor = true;
 
-    private String address = "0.0.0.0";
-    private String bootConf = "classpath:app.properties";
     private RouteMatcher routeMatcher = new RouteMatcher();
     private WebServer webServer = new WebServer();
     private Class<?> bootClass;
 
-    private Set<String> pkgs = new LinkedHashSet<>(Arrays.asList(Const.PLUGIN_PACKAGE_NAME));
+    private Set<String> pkgs = new LinkedHashSet<>(Arrays.asList(PLUGIN_PACKAGE_NAME));
+
+    private Ioc ioc = new SimpleIoc();
+    private TemplateEngine templateEngine = new DefaultEngine();
+
+    private Environment environment = Environment.empty();
 
     private EventManager eventManager = new EventManager();
-    private TemplateEngine templateEngine = new DefaultEngine();
-    private Ioc ioc = new SimpleIoc();
     private SessionManager sessionManager = new SessionManager();
 
     private Set<String> statics = new HashSet<>(Arrays.asList("/favicon.ico", "/static/", "/upload/", "/webjars/"));
@@ -132,20 +126,12 @@ public class Blade {
     }
 
     public Blade showFileList(boolean fileList) {
-        this.showFileList = fileList;
+        this.environment(ENV_KEY_STATIC_LIST, fileList);
         return this;
     }
 
-    public boolean showFileList() {
-        return this.showFileList;
-    }
-
-    public boolean gzip() {
-        return gzipEnable;
-    }
-
     public Blade gzip(boolean gzipEnable) {
-        this.gzipEnable = gzipEnable;
+        this.environment(ENV_KEY_GZIP_ENABLE, gzipEnable);
         return this;
     }
 
@@ -154,13 +140,13 @@ public class Blade {
     }
 
     public boolean devMode() {
-        return this.devMode;
+        return environment.getBoolean(ENV_KEY_DEV_MODE, true);
     }
 
     public Blade devMode(boolean devMode) {
-        this.devMode = devMode;
+        this.environment(ENV_KEY_DEV_MODE, devMode);
         if (!devMode) {
-            this.openMonitor = false;
+            this.openMonitor(false);
         }
         return this;
     }
@@ -170,12 +156,8 @@ public class Blade {
     }
 
     public Blade openMonitor(boolean openMonitor) {
-        this.openMonitor = openMonitor;
+        this.environment(ENV_KEY_GZIP_ENABLE, openMonitor);
         return this;
-    }
-
-    public boolean openMonitor() {
-        return this.openMonitor;
     }
 
     public Set<String> getStatics() {
@@ -192,40 +174,33 @@ public class Blade {
     }
 
     public Blade bootConf(String bootConf) {
-        this.bootConf = bootConf;
+        this.environment(ENV_KEY_BOOT_CONF, bootConf);
         return this;
     }
 
-    public String bootConf() {
-        return this.bootConf;
+    public Blade environment(String key, Object value) {
+        environment.set(key, value);
+        return this;
+    }
+
+    public Environment environment() {
+        return environment;
     }
 
     public Blade listen(int port) {
-        this.port = port;
+        this.environment(ENV_KEY_SERVER_PORT, port);
         return this;
     }
 
     public Blade listen(String address, int port) {
-        this.address = address;
-        this.port = port;
+        this.environment(ENV_KEY_SERVER_ADDRESS, address);
+        this.environment(ENV_KEY_SERVER_PORT, port);
         return this;
-    }
-
-    public String address() {
-        return this.address;
-    }
-
-    public int port() {
-        return this.port;
     }
 
     public Blade appName(String appName) {
-        this.appName = appName;
+        this.environment(ENV_KEY_APP_NAME, appName);
         return this;
-    }
-
-    public String appName() {
-        return appName;
     }
 
     public Blade event(Event.Type eventType, EventListener eventListener) {
@@ -247,11 +222,11 @@ public class Blade {
     }
 
     public Blade start() {
-        return this.start(null, address, port, null);
+        return this.start(null, DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, null);
     }
 
     public Blade start(Class<?> mainCls, String... args) {
-        return this.start(mainCls, address, port, args);
+        return this.start(mainCls, DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, args);
     }
 
     public Blade start(Class<?> bootClass, String address, int port, String... args) {

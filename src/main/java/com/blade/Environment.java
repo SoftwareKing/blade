@@ -33,6 +33,10 @@ public class Environment {
     private Environment() {
     }
 
+    public static Environment empty() {
+        return new Environment();
+    }
+
     /**
      * Properties to Environment
      *
@@ -166,13 +170,13 @@ public class Environment {
         return loader;
     }
 
-    public Environment set(String key, String value) {
-        props.setProperty(key, value);
+    public Environment set(String key, Object value) {
+        props.put(key, value);
         return this;
     }
 
-    public Environment add(String key, String value) {
-        props.setProperty(key, value);
+    public Environment add(String key, Object value) {
+        props.put(key, value);
         return this;
     }
 
@@ -194,9 +198,13 @@ public class Environment {
         return props.getProperty(key, defaultValue);
     }
 
+    public Optional<Object> getObject(String key) {
+        return Optional.ofNullable(props.get(key));
+    }
+
     public Optional<Integer> getInt(String key) {
-        if (get(key).isPresent()) {
-            return Optional.of(Integer.valueOf(get(key).get()));
+        if (getObject(key).isPresent()) {
+            return Optional.of((Integer) getObject(key).get());
         }
         return Optional.empty();
     }
@@ -209,8 +217,8 @@ public class Environment {
     }
 
     public Optional<Long> getLong(String key) {
-        if (get(key).isPresent()) {
-            return Optional.of(Long.valueOf(get(key).get()));
+        if (getObject(key).isPresent()) {
+            return Optional.of((Long) getObject(key).get());
         }
         return Optional.empty();
     }
@@ -223,22 +231,22 @@ public class Environment {
     }
 
     public Optional<Boolean> getBoolean(String key) {
-        if (get(key).isPresent()) {
-            return Optional.of(Boolean.valueOf(get(key).get()));
+        if (getObject(key).isPresent()) {
+            return Optional.of((Boolean) getObject(key).get());
         }
         return Optional.empty();
     }
 
     public Boolean getBoolean(String key, boolean defaultValue) {
-        if (get(key).isPresent()) {
-            return Boolean.valueOf(get(key).get());
+        if (getObject(key).isPresent()) {
+            return (Boolean) getObject(key).get();
         }
         return defaultValue;
     }
 
     public Optional<Double> getDouble(String key) {
-        if (get(key).isPresent()) {
-            return Optional.of(Double.valueOf(get(key).get()));
+        if (getObject(key).isPresent()) {
+            return Optional.of((Double) getObject(key).get());
         }
         return Optional.empty();
     }
@@ -255,4 +263,9 @@ public class Environment {
         props.forEach((k, v) -> map.put(k.toString(), v.toString()));
         return map;
     }
+
+    public Properties props() {
+        return props;
+    }
+
 }

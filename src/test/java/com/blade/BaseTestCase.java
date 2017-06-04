@@ -19,7 +19,7 @@ public class BaseTestCase {
 
     @Before
     public void setup() throws Exception {
-        System.setProperty("com.blade.logger.defaultLogLevel", "DEBUG");
+//        System.setProperty("com.blade.logger.defaultLogLevel", "DEBUG");
         app = Blade.me();
     }
 

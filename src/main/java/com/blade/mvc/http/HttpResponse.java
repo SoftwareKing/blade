@@ -1,6 +1,5 @@
 package com.blade.mvc.http;
 
-import com.blade.Blade;
 import com.blade.BladeException;
 import com.blade.kit.DateKit;
 import com.blade.kit.JsonKit;
@@ -276,7 +275,7 @@ public class HttpResponse implements Response {
         headers.set(HttpHeaders.Names.LOCATION, newUri);
         FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.FOUND);
         this.send(response);
-        if (WebContext.blade().openMonitor()) {
+        if (WebContext.blade().environment().getBoolean(Const.ENV_KEY_MONITOR_ENABLE, true)) {
             WebStatistics.me().registerRedirect(newUri);
         }
     }
@@ -303,7 +302,7 @@ public class HttpResponse implements Response {
     private HttpHeaders getDefaultHeader() {
         headers.set(DATE, DateKit.gmtDate());
         headers.set(CONTENT_TYPE, this.contentType);
-        headers.set(SERVER, "blade/" + Blade.VER);
+        headers.set(SERVER, "blade/" + Const.VER);
         this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
         return headers;
     }

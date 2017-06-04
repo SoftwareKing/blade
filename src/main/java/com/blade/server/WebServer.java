@@ -56,6 +56,7 @@ public class WebServer {
 
     public void initAndStart(Blade blade, String[] args) throws Exception {
         this.blade = blade;
+        this.environment = blade.environment();
 
         long initStart = System.currentTimeMillis();
         log.info("Blade environment: jdk.version\t=> {}", System.getProperty("java.version"));
@@ -65,27 +66,17 @@ public class WebServer {
         log.info("Blade environment: file.encoding\t=> {}", System.getProperty("file.encoding"));
         log.info("Blade environment: classpath\t\t=> {}", CLASSPATH);
 
-        try {
+        this.loadConfig();
+        this.initConfig();
 
-            // 1. 加载配置
-            this.loadConfig();
+        WebContext.init(blade, "/", false);
 
-            // 2. 初始化系统配置
-            this.initConfig();
+        this.initIoc();
 
-            WebContext.init(blade, "/", false);
+        startedEvents.forEach(e -> blade.event(Event.Type.SERVER_STARTED, e));
 
-            // 3. 初始化ioc
-            this.initIoc();
+        this.startServer(initStart);
 
-            // 4. 执行beanprocessor、启动事件
-            startedEvents.forEach(e -> blade.event(Event.Type.SERVER_STARTED, e));
-
-            // 5. 启动web服务
-            this.startServer(initStart);
-        } catch (Exception e) {
-            throw e;
-        }
     }
 
     private void initIoc() {
@@ -132,11 +123,11 @@ public class WebServer {
                 .handler(new LoggingHandler(LogLevel.DEBUG))
                 .childHandler(new HttpServerInitializer(blade, sslCtx));
 
-        String address = blade.address();
-        int port = blade.port();
+        String address = environment.get(Const.ENV_KEY_SERVER_ADDRESS, Const.DEFAULT_SERVER_ADDRESS);
+        int port = environment.getInt(Const.ENV_KEY_SERVER_PORT, Const.DEFAULT_SERVER_PORT);
 
         channel = b.bind(address, port).sync().channel();
-        String appName = blade.appName();
+        String appName = environment.get(Const.ENV_KEY_APP_NAME, "blade");
 
         log.info("{} initialize successfully, Time elapsed: {} ms.", appName, System.currentTimeMillis() - startTime);
         log.info("Blade start with {}:{}", address, port);
@@ -171,19 +162,18 @@ public class WebServer {
 
     private void loadConfig() {
 
-        String bootConf = blade.bootConf();
-        this.environment = Environment.of(bootConf);
+        String bootConf = blade.environment().get(Const.ENV_KEY_BOOT_CONF, "classpath:app.properties");
+
+        Environment bootEnv = Environment.of(bootConf);
+
+        bootEnv.props().forEach((key, value) -> environment.set(key.toString(), value));
+
         blade.register(environment);
 
-        String page404 = environment.get("mvc.view.404", "");
-        String page500 = environment.get("mvc.view.500", "");
-        String statics = environment.get("mvc.statics", "");
+        String statics = environment.get(Const.ENV_KEY_STATIC_DIRS, "");
         if (StringKit.isNotBlank(statics)) {
             blade.addStatics(statics.split(","));
         }
-
-        boolean devMode = environment.getBoolean("app.dev", true);
-        blade.devMode(devMode);
 
     }
 
@@ -197,7 +187,7 @@ public class WebServer {
 
         DefaultUI.printBanner();
 
-        if (blade.openMonitor()) {
+        if (environment.getBoolean(Const.ENV_KEY_MONITOR_ENABLE, true)) {
             DefaultUI.registerStatus(blade);
         }
 
