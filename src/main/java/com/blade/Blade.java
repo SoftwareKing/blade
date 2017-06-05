@@ -1,6 +1,5 @@
 package com.blade;
 
-import com.blade.event.Event;
 import com.blade.event.EventListener;
 import com.blade.event.EventManager;
 import com.blade.event.EventType;
@@ -165,7 +164,7 @@ public class Blade {
     public Blade devMode(boolean devMode) {
         this.environment(ENV_KEY_DEV_MODE, devMode);
         if (!devMode) {
-            this.openMonitor(false);
+            this.enableMonitor(false);
         }
         return this;
     }
@@ -174,8 +173,8 @@ public class Blade {
         return this.bootClass;
     }
 
-    public Blade openMonitor(boolean openMonitor) {
-        this.environment(ENV_KEY_GZIP_ENABLE, openMonitor);
+    public Blade enableMonitor(boolean openMonitor) {
+        this.environment(ENV_KEY_MONITOR_ENABLE, openMonitor);
         return this;
     }
 
