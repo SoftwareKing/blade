@@ -2,6 +2,7 @@ package com.blade.server;
 
 import com.blade.Blade;
 import com.blade.Environment;
+import com.blade.event.BeanProcessor;
 import com.blade.event.EventType;
 import com.blade.ioc.BeanDefine;
 import com.blade.ioc.DynamicContext;
@@ -12,9 +13,6 @@ import com.blade.ioc.reader.ClassInfo;
 import com.blade.kit.BladeKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
-import com.blade.event.BeanProcessor;
-import com.blade.event.Event;
-import com.blade.event.StartedEvent;
 import com.blade.mvc.Const;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.annotation.Path;
@@ -75,8 +73,6 @@ public class WebServer {
 
         this.initIoc();
 
-        startedEvents.forEach(e -> blade.event(EventType.SERVER_STARTED, e));
-
         this.startServer(initStart);
 
     }
@@ -99,7 +95,7 @@ public class WebServer {
 
         Ioc ioc = blade.ioc();
         if (BladeKit.isNotEmpty(ioc.getBeans())) {
-            log.info("Register bean: {}", ioc.getBeans());
+            log.info("⬢ Register bean: {}", ioc.getBeans());
         }
 
         List<BeanDefine> beanDefines = ioc.getBeanDefines();
@@ -132,17 +128,16 @@ public class WebServer {
         int port = environment.getInt(Const.ENV_KEY_SERVER_PORT, Const.DEFAULT_SERVER_PORT);
 
         channel = b.bind(address, port).sync().channel();
-        String appName = environment.get(Const.ENV_KEY_APP_NAME, "blade");
+        String appName = environment.get(Const.ENV_KEY_APP_NAME, "Blade");
 
-        log.info("{} initialize successfully, Time elapsed: {} ms.", appName, System.currentTimeMillis() - startTime);
-        log.info("Blade start with {}:{}", address, port);
-        log.info("Open your web browser and navigate to {}://{}:{}", (SSL ? "https" : "http"), address.replace("0.0.0.0", "127.0.0.1"), port);
+        log.info("⬢ {} initialize successfully, Time elapsed: {} ms.", appName, System.currentTimeMillis() - startTime);
+        log.info("⬢ Blade start with {}:{}", address, port);
+        log.info("⬢ Open your web browser and navigate to {}://{}:{} ⚡", (SSL ? "https" : "http"), address.replace("0.0.0.0", "127.0.0.1"), port);
 
         blade.eventManager().fireEvent(EventType.SERVER_STARTED, blade);
     }
 
     private List<BeanProcessor> beanProcessors = new ArrayList<>();
-    private List<StartedEvent> startedEvents = new ArrayList<>();
 
     private void parseCls(Class<?> clazz) {
         if (null != clazz.getAnnotation(Bean.class)) blade.register(clazz);
@@ -161,8 +156,7 @@ public class WebServer {
         }
         if (ReflectKit.hasInterface(clazz, BeanProcessor.class))
             beanProcessors.add((BeanProcessor) blade.ioc().getBean(clazz));
-        if (ReflectKit.hasInterface(clazz, StartedEvent.class))
-            startedEvents.add((StartedEvent) blade.ioc().getBean(clazz));
+
     }
 
     private void loadConfig() {
