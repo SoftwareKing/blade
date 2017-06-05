@@ -4,7 +4,6 @@ import com.blade.Blade;
 import com.blade.BladeException;
 import com.blade.metric.Connection;
 import com.blade.metric.WebStatistics;
-import com.blade.mvc.RouteMiddleware;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
 import com.blade.mvc.http.HttpRequest;
@@ -12,6 +11,7 @@ import com.blade.mvc.http.HttpResponse;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
 import com.blade.mvc.route.Route;
+import com.blade.mvc.route.RouteHandler;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.DefaultUI;
 import io.netty.buffer.Unpooled;
@@ -108,6 +108,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
 
         // web hook
         if (!invokeHook(routeMatcher.getBefore(uri), request, response)) {
+            this.sendFinish(response);
             return;
         }
 
@@ -192,20 +193,6 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         return result.isPresent();
     }
 
-//    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
-//        sendError(ctx, status, "");
-//    }
-//
-//    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status, String content) {
-//        boolean isHtml = StringKit.isNotBlank(content);
-//        content = isHtml ? content : "Failure: " + status + "\r\n";
-//        FullHttpResponse response = new DefaultFullHttpResponse(
-//                HTTP_1_1, status, Unpooled.wrappedBuffer(content.getBytes(CharsetUtil.UTF_8)));
-//        response.headers().set(CONTENT_TYPE, isHtml ? "text/html; charset=UTF-8" : "text/plain; charset=UTF-8");
-//        // Close the connection as soon as the error message is sent.
-//        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-//    }
-
     /**
      * Actual routing method execution
      *
@@ -220,9 +207,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             target = blade.getBean(clazz);
             route.setTarget(target);
         }
-        if (route.getTargetType() == RouteMiddleware.class) {
-            RouteMiddleware routeMiddleware = (RouteMiddleware) target;
-            routeMiddleware.handle(request, response);
+        if (route.getTargetType() == RouteHandler.class) {
+            RouteHandler routeHandler = (RouteHandler) target;
+            routeHandler.handle(request, response);
             return false;
         } else {
             return routeViewResolve.handle(request, response, route);
@@ -239,9 +226,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
      */
     private boolean invokeHook(List<Route> hooks, Request request, Response response) {
         for (Route route : hooks) {
-            if (route.getTargetType() == RouteMiddleware.class) {
-                RouteMiddleware routeMiddleware = (RouteMiddleware) route.getTarget();
-                routeMiddleware.handle(request, response);
+            if (route.getTargetType() == RouteHandler.class) {
+                RouteHandler routeHandler = (RouteHandler) route.getTarget();
+                routeHandler.handle(request, response);
             } else {
                 boolean flag = routeViewResolve.invokeHook(request, response, route);
                 if (!flag) return false;

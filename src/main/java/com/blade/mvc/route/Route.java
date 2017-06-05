@@ -40,6 +40,8 @@ public class Route {
      */
     private Method action;
 
+    private int sort = Integer.MAX_VALUE;
+
     /**
      * Url path params
      */
@@ -101,6 +103,14 @@ public class Route {
         this.pathParams = pathParams;
     }
 
+    public int getSort() {
+        return sort;
+    }
+
+    public void setSort(int sort) {
+        this.sort = sort;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -108,12 +118,15 @@ public class Route {
 
         Route route = (Route) o;
 
+        if (sort != route.sort) return false;
         if (httpMethod != route.httpMethod) return false;
         if (path != null ? !path.equals(route.path) : route.path != null) return false;
         if (target != null ? !target.equals(route.target) : route.target != null) return false;
         if (targetType != null ? !targetType.equals(route.targetType) : route.targetType != null) return false;
         if (action != null ? !action.equals(route.action) : route.action != null) return false;
-        return pathParams != null ? pathParams.equals(route.pathParams) : route.pathParams == null;
+        if (pathParams != null ? !pathParams.equals(route.pathParams) : route.pathParams != null) return false;
+
+        return true;
     }
 
     @Override
@@ -123,6 +136,7 @@ public class Route {
         result = 31 * result + (target != null ? target.hashCode() : 0);
         result = 31 * result + (targetType != null ? targetType.hashCode() : 0);
         result = 31 * result + (action != null ? action.hashCode() : 0);
+        result = 31 * result + sort;
         result = 31 * result + (pathParams != null ? pathParams.hashCode() : 0);
         return result;
     }

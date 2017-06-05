@@ -1,11 +1,11 @@
 package com.blade.mvc.route;
 
 import com.blade.BladeException;
+import com.blade.ioc.annotation.Order;
 import com.blade.kit.Assert;
 import com.blade.kit.PathKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
-import com.blade.mvc.RouteMiddleware;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
@@ -36,7 +36,7 @@ public class RouteMatcher {
 
     // Storage URL and route
     private Map<String, Route> routes = new HashMap<>();
-    private Map<String, Route> hooks = new HashMap<>();
+    private Map<String, List<Route>> hooks = new HashMap<>();
 
     private Map<String, Method[]> classMethosPool = new ConcurrentHashMap<>();
     private Map<Class<?>, Object> controllerPool = new ConcurrentHashMap<>();
@@ -66,7 +66,7 @@ public class RouteMatcher {
             if (null != this.hooks.get(key)) {
                 log.warn("\tWebHook {} -> {} has exist", path, httpMethod.toString());
             }
-            this.hooks.put(key, route);
+            this.hooks.getOrDefault(key, new ArrayList<>()).add(route);
             log.debug("Add hook  => {}", route);
         } else {
             this.routes.put(key, route);
@@ -78,10 +78,10 @@ public class RouteMatcher {
         routes.forEach(this::addRoute);
     }
 
-    public Route addRoute(HttpMethod httpMethod, String path, RouteMiddleware handler, String methodName) throws NoSuchMethodException {
+    public Route addRoute(HttpMethod httpMethod, String path, RouteHandler handler, String methodName) throws NoSuchMethodException {
         Class<?> handleType = handler.getClass();
         Method method = handleType.getMethod(methodName, Request.class, Response.class);
-        return addRoute(httpMethod, path, handler, RouteMiddleware.class, method);
+        return addRoute(httpMethod, path, handler, RouteHandler.class, method);
     }
 
 
@@ -92,24 +92,34 @@ public class RouteMatcher {
         path = path.replace("/**", "/.*").replace("/*", "/.*");
 
         String key = path + "#" + httpMethod.toString();
-        // existent
-        if (null != this.routes.get(key)) {
+
+        // exist
+        if (this.routes.containsKey(key)) {
             log.warn("\tRoute {} -> {} has exist", path, httpMethod.toString());
         }
 
         Route route = new Route(httpMethod, path, controller, controllerType, method);
         if (httpMethod == HttpMethod.BEFORE || httpMethod == HttpMethod.AFTER) {
-            if (null != this.hooks.get(key)) {
-                log.warn("\tWebHook {} -> {} has exist", path, httpMethod.toString());
+
+            Order order = controllerType.getAnnotation(Order.class);
+            if (null != order) {
+                route.setSort(order.value());
             }
-            this.hooks.put(key, route);
+
+            if (this.hooks.containsKey(key)) {
+                this.hooks.get(key).add(route);
+            } else {
+                List<Route> empty = new ArrayList<>();
+                empty.add(route);
+                this.hooks.put(key, empty);
+            }
         } else {
             this.routes.put(key, route);
         }
         return route;
     }
 
-    public Route addRoute(String path, RouteMiddleware handler, HttpMethod httpMethod) {
+    public Route addRoute(String path, RouteHandler handler, HttpMethod httpMethod) {
         try {
             return addRoute(httpMethod, path, handler, METHOD_NAME);
         } catch (Exception e) {
@@ -118,7 +128,7 @@ public class RouteMatcher {
         }
     }
 
-    public void addRoute(String[] paths, RouteMiddleware handler, HttpMethod httpMethod) {
+    public void addRoute(String[] paths, RouteHandler handler, HttpMethod httpMethod) {
         for (String path : paths) {
             addRoute(path, handler, httpMethod);
         }
@@ -231,24 +241,29 @@ public class RouteMatcher {
      * @param path request path
      */
     public List<Route> getBefore(String path) {
-
         String cleanPath = parsePath(path);
-
         List<Route> befores = hooks.values().stream()
-                .filter(route -> route.getHttpMethod() == HttpMethod.BEFORE && matchesPath(route.getPath(), cleanPath))
+                .flatMap(routes -> routes.stream())
+                .sorted(Comparator.comparingInt(route -> route.getSort()))
+                .filter(route -> {
+                    return route.getHttpMethod() == HttpMethod.BEFORE && matchesPath(route.getPath(), cleanPath);
+                })
                 .collect(Collectors.toList());
 
-        this.giveMatch(path, befores);
+//        this.giveMatch(path, befores);
         return befores;
     }
 
     public List<Route> getBefore2(String path) {
         String cleanPath = parsePath(path);
+
         List<Route> befores = hooks.values().parallelStream()
+                .flatMap(routes -> routes.stream())
+                .sorted(Comparator.comparingInt(route -> route.getSort()))
                 .filter(route -> route.getHttpMethod() == HttpMethod.BEFORE && matchesPath(route.getPath(), cleanPath))
                 .collect(Collectors.toList());
 
-        this.giveMatch(path, befores);
+//        this.giveMatch(path, befores);
         return befores;
     }
 
@@ -261,6 +276,8 @@ public class RouteMatcher {
         String cleanPath = parsePath(path);
 
         List<Route> afters = hooks.values().stream()
+                .flatMap(routes -> routes.stream())
+                .sorted(Comparator.comparingInt(route -> route.getSort()))
                 .filter(route -> route.getHttpMethod() == HttpMethod.AFTER && matchesPath(route.getPath(), cleanPath))
                 .collect(Collectors.toList());
 
@@ -275,7 +292,7 @@ public class RouteMatcher {
      * @param routes route list
      */
     private void giveMatch(final String uri, List<Route> routes) {
-        Collections.sort(routes, (o1, o2) -> {
+        routes.stream().sorted((o1, o2) -> {
             if (o2.getPath().equals(uri)) {
                 return o2.getPath().indexOf(uri);
             }
@@ -318,9 +335,9 @@ public class RouteMatcher {
         hooks.values().forEach(route -> log.info("Add hook  => {}", route));
 
         List<Route> routeHandlers = new ArrayList<>(routes.values());
-        routeHandlers.addAll(hooks.values());
+        routeHandlers.addAll(hooks.values().stream().findAny().orElse(new ArrayList<>()));
 
-        Stream.of(routes.values(), hooks.values())
+        Stream.of(routes.values(), hooks.values().stream().findAny().orElse(new ArrayList<>()))
                 .flatMap(c -> c.stream()).forEach(this::registerRoute);
 
         patternBuilders.keySet().stream()

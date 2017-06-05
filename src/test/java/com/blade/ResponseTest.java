@@ -92,7 +92,7 @@ public class ResponseTest extends BaseTestCase {
         start(
                 app.get("/", ((request, response) -> {
                     response.cookie("c1", "value1").json(response.cookies());
-                })).closeSessoin()
+                })).disableSession()
         );
         String headers = bodyToString("/");
         assertEquals("{\"c1\":\"value1\"}", headers);

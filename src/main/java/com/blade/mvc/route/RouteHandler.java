@@ -1,4 +1,4 @@
-package com.blade.mvc;
+package com.blade.mvc.route;
 
 import com.blade.mvc.hook.Invoker;
 import com.blade.mvc.http.Request;
@@ -13,7 +13,7 @@ import com.blade.mvc.middleware.MiddlewareChain;
  *         2017/5/31
  */
 @FunctionalInterface
-public interface RouteMiddleware extends Middleware {
+public interface RouteHandler extends Middleware {
 
     void handle(Request request, Response response);
 
