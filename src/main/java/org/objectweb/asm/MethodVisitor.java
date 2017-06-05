@@ -383,7 +383,7 @@ public abstract class MethodVisitor {
      * @param owner  the internal name of the field's owner class (see
      *               {@link Type#getInternalName() getInternalName}).
      * @param name   the field's name.
-     * @param desc   the field's descriptor (see {@link Type Type}).
+     * @param desc   the field's descriptor (see {@link Type EventType}).
      */
     public void visitFieldInsn(int opcode, String owner, String name,
                                String desc) {
@@ -402,7 +402,7 @@ public abstract class MethodVisitor {
      * @param owner  the internal name of the method's owner class (see
      *               {@link Type#getInternalName() getInternalName}).
      * @param name   the method's name.
-     * @param desc   the method's descriptor (see {@link Type Type}).
+     * @param desc   the method's descriptor (see {@link Type EventType}).
      */
     @Deprecated
     public void visitMethodInsn(int opcode, String owner, String name,
@@ -427,7 +427,7 @@ public abstract class MethodVisitor {
      * @param owner  the internal name of the method's owner class (see
      *               {@link Type#getInternalName() getInternalName}).
      * @param name   the method's name.
-     * @param desc   the method's descriptor (see {@link Type Type}).
+     * @param desc   the method's descriptor (see {@link Type EventType}).
      * @param itf    if the method's owner class is an interface.
      */
     public void visitMethodInsn(int opcode, String owner, String name,
@@ -449,7 +449,7 @@ public abstract class MethodVisitor {
      * Visits an invokedynamic instruction.
      *
      * @param name    the method's name.
-     * @param desc    the method's descriptor (see {@link Type Type}).
+     * @param desc    the method's descriptor (see {@link Type EventType}).
      * @param bsm     the bootstrap method.
      * @param bsmArgs the bootstrap method constant arguments. Each argument must be
      *                an {@link Integer}, {@link Float}, {@link Long},
@@ -515,13 +515,13 @@ public abstract class MethodVisitor {
      *     // ...
      * } else if (cst instanceof String) {
      *     // ...
-     * } else if (cst instanceof Type) {
-     *     int sort = ((Type) cst).getSort();
-     *     if (sort == Type.OBJECT) {
+     * } else if (cst instanceof EventType) {
+     *     int sort = ((EventType) cst).getSort();
+     *     if (sort == EventType.OBJECT) {
      *         // ...
-     *     } else if (sort == Type.ARRAY) {
+     *     } else if (sort == EventType.ARRAY) {
      *         // ...
-     *     } else if (sort == Type.METHOD) {
+     *     } else if (sort == EventType.METHOD) {
      *         // ...
      *     } else {
      *         // throw an exception
@@ -592,7 +592,7 @@ public abstract class MethodVisitor {
     /**
      * Visits a MULTIANEWARRAY instruction.
      *
-     * @param desc an array type descriptor (see {@link Type Type}).
+     * @param desc an array type descriptor (see {@link Type EventType}).
      * @param dims number of dimensions of the array to allocate.
      */
     public void visitMultiANewArrayInsn(String desc, int dims) {

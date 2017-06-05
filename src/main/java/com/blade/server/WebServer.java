@@ -2,6 +2,7 @@ package com.blade.server;
 
 import com.blade.Blade;
 import com.blade.Environment;
+import com.blade.event.EventType;
 import com.blade.ioc.BeanDefine;
 import com.blade.ioc.DynamicContext;
 import com.blade.ioc.Ioc;
@@ -74,7 +75,7 @@ public class WebServer {
 
         this.initIoc();
 
-        startedEvents.forEach(e -> blade.event(Event.Type.SERVER_STARTED, e));
+        startedEvents.forEach(e -> blade.event(EventType.SERVER_STARTED, e));
 
         this.startServer(initStart);
 
@@ -82,6 +83,8 @@ public class WebServer {
 
     private void initIoc() {
         RouteMatcher routeMatcher = blade.routeMatcher();
+        routeMatcher.initMiddlewares(blade.middlewares());
+
         routeBuilder = new RouteBuilder(routeMatcher);
 
         blade.scanPackages().stream()
@@ -92,7 +95,7 @@ public class WebServer {
 
         routeMatcher.register();
 
-        beanProcessors.stream().sorted(new OrderComparator<>()).forEach(b -> b.prev(blade));
+        beanProcessors.stream().sorted(new OrderComparator<>()).forEach(b -> b.preHandle(blade));
 
         Ioc ioc = blade.ioc();
         if (BladeKit.isNotEmpty(ioc.getBeans())) {
@@ -135,7 +138,7 @@ public class WebServer {
         log.info("Blade start with {}:{}", address, port);
         log.info("Open your web browser and navigate to {}://{}:{}", (SSL ? "https" : "http"), address.replace("0.0.0.0", "127.0.0.1"), port);
 
-        blade.eventManager().fireEvent(Event.Type.SERVER_STARTED, blade);
+        blade.eventManager().fireEvent(EventType.SERVER_STARTED, blade);
     }
 
     private List<BeanProcessor> beanProcessors = new ArrayList<>();

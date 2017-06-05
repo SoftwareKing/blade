@@ -143,7 +143,7 @@ public abstract class UUID {
      * 将一个 UU64 表示的紧凑字符串，变成 UU16 表示的字符串
      * <p>
      * <pre>
-     * 每次取2个字符，恢复成3个byte，重复10次， 最后一次，是用最后2个字符，恢复回2个byte </prev>
+     * 每次取2个字符，恢复成3个byte，重复10次， 最后一次，是用最后2个字符，恢复回2个byte </preHandle>
      *
      * @param uu64
      *            uu64 64进制表示的 UUID, 内容为 [\\-0-9a-zA-Z_]

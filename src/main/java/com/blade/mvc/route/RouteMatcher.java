@@ -2,10 +2,9 @@ package com.blade.mvc.route;
 
 import com.blade.BladeException;
 import com.blade.ioc.annotation.Order;
-import com.blade.kit.Assert;
-import com.blade.kit.PathKit;
-import com.blade.kit.ReflectKit;
-import com.blade.kit.StringKit;
+import com.blade.kit.*;
+import com.blade.mvc.hook.Invoker;
+import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
@@ -37,12 +36,12 @@ public class RouteMatcher {
     // Storage URL and route
     private Map<String, Route> routes = new HashMap<>();
     private Map<String, List<Route>> hooks = new HashMap<>();
+    private List<Route> middlewares;
 
     private Map<String, Method[]> classMethosPool = new ConcurrentHashMap<>();
     private Map<Class<?>, Object> controllerPool = new ConcurrentHashMap<>();
 
     private static final Pattern PATH_VARIABLE_PATTERN = Pattern.compile(":(\\w+)");
-
     private static final String PATH_VARIABLE_REPLACE = "([^/]+)";
 
     private Map<HttpMethod, Map<Integer, FastRouteMappingInfo>> regexRoutes = new HashMap<>();
@@ -57,16 +56,23 @@ public class RouteMatcher {
         HttpMethod httpMethod = route.getHttpMethod();
         String key = path + "#" + httpMethod.toString();
 
-        // existent
-        if (null != this.routes.get(key)) {
+        // exist
+        if (this.routes.containsKey(key)) {
             log.warn("\tRoute {} -> {} has exist", path, httpMethod.toString());
         }
 
-        if (httpMethod == HttpMethod.BEFORE || httpMethod == HttpMethod.AFTER) {
-            if (null != this.hooks.get(key)) {
-                log.warn("\tWebHook {} -> {} has exist", path, httpMethod.toString());
+        if (BladeKit.isWebHook(httpMethod)) {
+            Order order = route.getTargetType().getAnnotation(Order.class);
+            if (null != order) {
+                route.setSort(order.value());
             }
-            this.hooks.getOrDefault(key, new ArrayList<>()).add(route);
+            if (this.hooks.containsKey(key)) {
+                this.hooks.get(key).add(route);
+            } else {
+                List<Route> empty = new ArrayList<>();
+                empty.add(route);
+                this.hooks.put(key, empty);
+            }
             log.debug("Add hook  => {}", route);
         } else {
             this.routes.put(key, route);
@@ -99,13 +105,11 @@ public class RouteMatcher {
         }
 
         Route route = new Route(httpMethod, path, controller, controllerType, method);
-        if (httpMethod == HttpMethod.BEFORE || httpMethod == HttpMethod.AFTER) {
-
+        if (BladeKit.isWebHook(httpMethod)) {
             Order order = controllerType.getAnnotation(Order.class);
             if (null != order) {
                 route.setSort(order.value());
             }
-
             if (this.hooks.containsKey(key)) {
                 this.hooks.get(key).add(route);
             } else {
@@ -148,7 +152,7 @@ public class RouteMatcher {
     public void route(String path, Class<?> clazz, String methodName, HttpMethod httpMethod) {
         try {
             Assert.notNull(path, "Route path not is null!");
-            Assert.notNull(clazz, "Class Type not is null!");
+            Assert.notNull(clazz, "Class EventType not is null!");
             Assert.notNull(methodName, "Method name not is null");
             Assert.notNull(httpMethod, "Request Method not is null");
 
@@ -250,7 +254,7 @@ public class RouteMatcher {
                 })
                 .collect(Collectors.toList());
 
-//        this.giveMatch(path, befores);
+        this.giveMatch(path, befores);
         return befores;
     }
 
@@ -263,7 +267,7 @@ public class RouteMatcher {
                 .filter(route -> route.getHttpMethod() == HttpMethod.BEFORE && matchesPath(route.getPath(), cleanPath))
                 .collect(Collectors.toList());
 
-//        this.giveMatch(path, befores);
+        this.giveMatch(path, befores);
         return befores;
     }
 
@@ -283,6 +287,10 @@ public class RouteMatcher {
 
         this.giveMatch(path, afters);
         return afters;
+    }
+
+    public List<Route> getMiddlewares() {
+        return this.middlewares;
     }
 
     /**
@@ -341,7 +349,7 @@ public class RouteMatcher {
                 .flatMap(c -> c.stream()).forEach(this::registerRoute);
 
         patternBuilders.keySet().stream()
-                .filter(httpMethod -> httpMethod != HttpMethod.BEFORE && httpMethod != HttpMethod.AFTER)
+                .filter(BladeKit::notIsWebHook)
                 .forEach(httpMethod -> {
                     StringBuilder patternBuilder = patternBuilders.get(httpMethod);
                     if (patternBuilder.length() > 1) {
@@ -365,7 +373,7 @@ public class RouteMatcher {
             uriVariableNames.add(group.substring(1));   // {id} -> id
         }
         HttpMethod httpMethod = route.getHttpMethod();
-        if (find || (httpMethod == HttpMethod.AFTER || httpMethod == HttpMethod.BEFORE)) {
+        if (find || BladeKit.isWebHook(httpMethod)) {
             if (regexRoutes.get(httpMethod) == null) {
                 regexRoutes.put(httpMethod, new HashMap<>());
                 patternBuilders.put(httpMethod, new StringBuilder("^"));
@@ -393,6 +401,13 @@ public class RouteMatcher {
         this.regexRoutes.clear();
         this.indexes.clear();
         this.patternBuilders.clear();
+    }
+
+    public void initMiddlewares(List<WebHook> hooks) {
+        this.middlewares = hooks.stream().map(webHook -> {
+            Method method = ReflectKit.getMethod(WebHook.class, "before", Invoker.class);
+            return new Route(HttpMethod.BEFORE, "/.*", webHook, WebHook.class, method);
+        }).collect(Collectors.toList());
     }
 
     private class FastRouteMappingInfo {

@@ -220,7 +220,7 @@ public abstract class ClassVisitor {
      * @param access    the field's access flags (see {@link Opcodes}). This parameter
      *                  also indicates if the field is synthetic and/or deprecated.
      * @param name      the field's name.
-     * @param desc      the field's descriptor (see {@link Type Type}).
+     * @param desc      the field's descriptor (see {@link Type EventType}).
      * @param signature the field's signature. May be <tt>null</tt> if the field's
      *                  type does not use generic types.
      * @param value     the field's initial value. This parameter, which may be
@@ -253,7 +253,7 @@ public abstract class ClassVisitor {
      *                   parameter also indicates if the method is synthetic and/or
      *                   deprecated.
      * @param name       the method's name.
-     * @param desc       the method's descriptor (see {@link Type Type}).
+     * @param desc       the method's descriptor (see {@link Type EventType}).
      * @param signature  the method's signature. May be <tt>null</tt> if the method
      *                   parameters, return type and exceptions do not use generic
      *                   types.

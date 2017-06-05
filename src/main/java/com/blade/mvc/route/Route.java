@@ -31,7 +31,7 @@ public class Route {
     private Object target;
 
     /**
-     * PathKit Class Type
+     * PathKit Class EventType
      */
     private Class<?> targetType;
 

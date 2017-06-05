@@ -9,9 +9,11 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface DeleteRoute {
 
+    String value() default "/";
+
     /**
      * @return Request url
      */
-    String[] values() default {"/"};
+    String[] values() default {};
 
 }

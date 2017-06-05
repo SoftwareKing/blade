@@ -3,6 +3,7 @@ package com.blade.mvc.http;
 import com.blade.BladeException;
 import com.blade.kit.StringKit;
 import com.blade.mvc.multipart.FileItem;
+import com.blade.mvc.route.Route;
 import com.blade.server.SessionHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -41,6 +42,8 @@ public class HttpRequest implements Request {
     }
 
     private HttpPostRequestDecoder decoder;
+    private SessionHandler sessionHandler;
+    private Route route;
 
     private ByteBuf body;
 
@@ -52,7 +55,7 @@ public class HttpRequest implements Request {
     private String contextPath;
     private boolean keepAlive;
 
-    private SessionHandler sessionHandler;
+
 
     private Map<String, String> headers = new HashMap<>();
     private Map<String, Object> attrs = new HashMap<>();
@@ -143,9 +146,16 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Request initPathParams(Map<String, String> pathParams) {
-        if (null != pathParams) this.pathParams = pathParams;
+    public Request initPathParams(Route route) {
+        this.route = route;
+        if (null != route.getPathParams())
+            this.pathParams = route.getPathParams();
         return this;
+    }
+
+    @Override
+    public Route route() {
+        return this.route;
     }
 
     @Override

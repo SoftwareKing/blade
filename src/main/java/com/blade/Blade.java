@@ -1,14 +1,17 @@
 package com.blade;
 
-import com.blade.ioc.Ioc;
-import com.blade.ioc.SimpleIoc;
 import com.blade.event.Event;
 import com.blade.event.EventListener;
 import com.blade.event.EventManager;
+import com.blade.event.EventType;
+import com.blade.ioc.Ioc;
+import com.blade.ioc.SimpleIoc;
 import com.blade.kit.Assert;
-import com.blade.mvc.route.RouteHandler;
+import com.blade.kit.BladeKit;
+import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.http.SessionManager;
+import com.blade.mvc.route.RouteHandler;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.template.DefaultEngine;
 import com.blade.mvc.ui.template.TemplateEngine;
@@ -16,10 +19,7 @@ import com.blade.server.WebServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -41,7 +41,10 @@ public class Blade {
     private WebServer webServer = new WebServer();
     private Class<?> bootClass;
 
+    private List<WebHook> middlewares = new ArrayList<>();
+
     private Set<String> pkgs = new LinkedHashSet<>(Arrays.asList(PLUGIN_PACKAGE_NAME));
+    private Set<String> statics = new HashSet<>(Arrays.asList("/favicon.ico", "/static/", "/upload/", "/webjars/"));
 
     private Ioc ioc = new SimpleIoc();
     private TemplateEngine templateEngine = new DefaultEngine();
@@ -50,8 +53,6 @@ public class Blade {
 
     private EventManager eventManager = new EventManager();
     private SessionManager sessionManager = new SessionManager();
-
-    private Set<String> statics = new HashSet<>(Arrays.asList("/favicon.ico", "/static/", "/upload/", "/webjars/"));
 
     private Consumer<Exception> startupExceptionHandler = (e) -> log.error("Failed to start Blade", e);
 
@@ -223,13 +224,24 @@ public class Blade {
         return this;
     }
 
+    public Blade use(WebHook... middlewares) {
+        if (!BladeKit.isEmpty(middlewares)) {
+            this.middlewares.addAll(Arrays.asList(middlewares));
+        }
+        return this;
+    }
+
+    public List<WebHook> middlewares() {
+        return this.middlewares;
+    }
+
     public Blade appName(String appName) {
         Assert.notEmpty(appName, "app name not is empty.");
         this.environment(ENV_KEY_APP_NAME, appName);
         return this;
     }
 
-    public Blade event(Event.Type eventType, EventListener eventListener) {
+    public Blade event(EventType eventType, EventListener eventListener) {
         Assert.notNull(eventType, "event type not is null.");
         Assert.notNull(eventListener, "event listener not is null.");
         eventManager.addEventListener(eventType, eventListener);
@@ -262,7 +274,7 @@ public class Blade {
             Assert.notEmpty(address, "server address not is empty.");
             Assert.greaterThan(port, 0, "server port not is negative number.");
             this.bootClass = bootClass;
-            eventManager.fireEvent(Event.Type.SERVER_STARTING, this);
+            eventManager.fireEvent(EventType.SERVER_STARTING, this);
             Thread thread = new Thread(() -> {
                 try {
                     webServer.initAndStart(Blade.this, args);
@@ -295,9 +307,9 @@ public class Blade {
     }
 
     public void stop() {
-        eventManager.fireEvent(Event.Type.SERVER_STOPPING, this);
+        eventManager.fireEvent(EventType.SERVER_STOPPING, this);
         webServer.stop();
-        eventManager.fireEvent(Event.Type.SERVER_STOPPED, this);
+        eventManager.fireEvent(EventType.SERVER_STOPPED, this);
     }
 
 }

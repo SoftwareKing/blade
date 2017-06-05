@@ -7,6 +7,7 @@ import com.blade.ioc.Ioc;
 import com.blade.ioc.annotation.Inject;
 import com.blade.ioc.annotation.InjectWith;
 import com.blade.kit.ason.Ason;
+import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.http.Request;
 
 import java.lang.reflect.Field;
@@ -80,6 +81,10 @@ public class BladeKit {
         return null == c || c.isEmpty();
     }
 
+    public static <T> boolean isEmpty(T[] arr) {
+        return null == arr || arr.length == 0;
+    }
+
     public static boolean isNotEmpty(Collection<?> c) {
         return null != c && !c.isEmpty();
     }
@@ -88,6 +93,14 @@ public class BladeKit {
         Map<K, V> map = new HashMap<>();
         map.put(k, v);
         return map;
+    }
+
+    public static boolean isWebHook(HttpMethod httpMethod) {
+        return httpMethod == HttpMethod.BEFORE || httpMethod == HttpMethod.AFTER;
+    }
+
+    public static boolean notIsWebHook(HttpMethod httpMethod) {
+        return !isWebHook(httpMethod);
     }
 
 }

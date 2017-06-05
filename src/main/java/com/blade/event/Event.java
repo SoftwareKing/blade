@@ -4,25 +4,15 @@ import com.blade.Blade;
 
 public class Event {
 
-    public enum Type {
-        SERVER_STARTING,
-        SERVER_STARTED,
-        SERVER_STOPPING,
-        SERVER_STOPPED,
-        SESSION_CREATED,
-        SESSION_DESTROY
-    }
-
-    public Type eventType;
+    public EventType eventEventType;
     public Blade blade;
 
-    public Event(Type eventType) {
-        this.eventType = eventType;
-        this.blade = null;
+    public Event(EventType eventEventType) {
+        this.eventEventType = eventEventType;
     }
 
-    public Event(Type eventType, Blade blade) {
-        this.eventType = eventType;
+    public Event(EventType eventEventType, Blade blade) {
+        this.eventEventType = eventEventType;
         this.blade = blade;
     }
 

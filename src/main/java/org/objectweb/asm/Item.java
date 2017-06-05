@@ -43,7 +43,7 @@ final class Item {
     int index;
 
     /**
-     * Type of this constant pool item. A single class is used to represent all
+     * EventType of this constant pool item. A single class is used to represent all
      * constant pool item types, in order to minimize the bytecode size of this
      * package. The value of this field is one of {@link ClassWriter#INT},
      * {@link ClassWriter#LONG}, {@link ClassWriter#FLOAT},

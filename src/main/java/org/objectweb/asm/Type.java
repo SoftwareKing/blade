@@ -225,7 +225,7 @@ public class Type {
 
     /**
      * Returns the Java type corresponding to the given method descriptor.
-     * Equivalent to <code>Type.getType(methodDescriptor)</code>.
+     * Equivalent to <code>EventType.getType(methodDescriptor)</code>.
      *
      * @param methodDescriptor a method descriptor.
      * @return the Java type corresponding to the given method descriptor.
@@ -654,7 +654,7 @@ public class Type {
 
     // ------------------------------------------------------------------------
     // Direct conversion from classes to type descriptors,
-    // without intermediate Type objects
+    // without intermediate EventType objects
     // ------------------------------------------------------------------------
 
     /**

@@ -4,6 +4,7 @@ import com.blade.kit.StringKit;
 import com.blade.kit.WebKit;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.multipart.FileItem;
+import com.blade.mvc.route.Route;
 import io.netty.buffer.ByteBuf;
 
 import java.util.List;
@@ -24,10 +25,12 @@ public interface Request {
     /**
      * init request path parameters
      *
-     * @param pathParams
+     * @param route
      * @return
      */
-    Request initPathParams(Map<String, String> pathParams);
+    Request initPathParams(Route route);
+
+    Route route();
 
     /**
      * @return Return client request host

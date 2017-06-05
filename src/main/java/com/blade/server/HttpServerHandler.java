@@ -2,10 +2,13 @@ package com.blade.server;
 
 import com.blade.Blade;
 import com.blade.BladeException;
+import com.blade.kit.BladeKit;
 import com.blade.metric.Connection;
 import com.blade.metric.WebStatistics;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
+import com.blade.mvc.hook.Invoker;
+import com.blade.mvc.hook.WebHook;
 import com.blade.mvc.http.HttpRequest;
 import com.blade.mvc.http.HttpResponse;
 import com.blade.mvc.http.Request;
@@ -69,7 +72,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         this.routeMatcher = blade.routeMatcher();
         this.routeViewResolve = new RouteViewResolve(blade);
         this.staticFileHandler = new StaticFileHandler(blade);
-        this.sessionHandler = blade.sessionManager() != null ? new SessionHandler(blade.sessionManager(), blade.environment()) : null;
+        this.sessionHandler = blade.sessionManager() != null ? new SessionHandler(blade) : null;
     }
 
     @Override
@@ -124,7 +127,14 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             }
             return;
         }
-        request.initPathParams(route.getPathParams());
+        request.initPathParams(route);
+
+        // middlewares
+        if (!invokeMiddlewares(routeMatcher.getMiddlewares(), request, response)) {
+            this.sendFinish(response);
+            return;
+        }
+
         // execute
         this.routeHandle(request, response, route);
 
@@ -214,6 +224,19 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         } else {
             return routeViewResolve.handle(request, response, route);
         }
+    }
+
+    private boolean invokeMiddlewares(List<Route> middlewares, Request request, Response response) {
+        if (BladeKit.isEmpty(middlewares)) {
+            return true;
+        }
+        Invoker invoker = new Invoker(request, response);
+        for (Route middleware : middlewares) {
+            WebHook webHook = (WebHook) middleware.getTarget();
+            boolean flag = webHook.before(invoker);
+            if (!flag) return false;
+        }
+        return true;
     }
 
     /**
