@@ -1,4 +1,4 @@
-package com.blade.lifecycle;
+package com.blade.event;
 
 import com.blade.Blade;
 import com.blade.ioc.OrderComparator;

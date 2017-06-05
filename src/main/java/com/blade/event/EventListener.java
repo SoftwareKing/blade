@@ -1,4 +1,4 @@
-package com.blade.lifecycle;
+package com.blade.event;
 
 @FunctionalInterface
 public interface EventListener {

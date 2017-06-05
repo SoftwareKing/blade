@@ -4,7 +4,7 @@ import com.blade.Blade;
 import com.blade.BladeException;
 import com.blade.metric.Connection;
 import com.blade.metric.WebStatistics;
-import com.blade.mvc.RouteHandler;
+import com.blade.mvc.RouteMiddleware;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.handler.RouteViewResolve;
 import com.blade.mvc.http.HttpRequest;
@@ -220,9 +220,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             target = blade.getBean(clazz);
             route.setTarget(target);
         }
-        if (route.getTargetType() == RouteHandler.class) {
-            RouteHandler routeHandler = (RouteHandler) target;
-            routeHandler.handle(request, response);
+        if (route.getTargetType() == RouteMiddleware.class) {
+            RouteMiddleware routeMiddleware = (RouteMiddleware) target;
+            routeMiddleware.handle(request, response);
             return false;
         } else {
             return routeViewResolve.handle(request, response, route);
@@ -239,9 +239,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
      */
     private boolean invokeHook(List<Route> hooks, Request request, Response response) {
         for (Route route : hooks) {
-            if (route.getTargetType() == RouteHandler.class) {
-                RouteHandler routeHandler = (RouteHandler) route.getTarget();
-                routeHandler.handle(request, response);
+            if (route.getTargetType() == RouteMiddleware.class) {
+                RouteMiddleware routeMiddleware = (RouteMiddleware) route.getTarget();
+                routeMiddleware.handle(request, response);
             } else {
                 boolean flag = routeViewResolve.invokeHook(request, response, route);
                 if (!flag) return false;

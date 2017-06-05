@@ -1,12 +1,21 @@
 package com.blade.mvc.http;
 
+import com.blade.kit.JsonKit;
+import com.blade.mvc.Const;
+import com.blade.mvc.WebContext;
 import com.blade.mvc.ui.ModelAndView;
 import com.blade.mvc.ui.RestResponse;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.util.CharsetUtil;
 
 import java.io.File;
 import java.nio.Buffer;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Http Response
@@ -32,17 +41,23 @@ public interface Response {
     /**
      * @return Setting Response Status is BadRequest and Return Response
      */
-    Response badRequest();
+    default Response badRequest() {
+        return status(400);
+    }
 
     /**
      * @return Setting Response Status is unauthorized and Return Response
      */
-    Response unauthorized();
+    default Response unauthorized() {
+        return status(401);
+    }
 
     /**
      * @return Setting Response Status is notFound and Return Response
      */
-    Response notFound();
+    default Response notFound() {
+        return status(404);
+    }
 
     /**
      * Setting Response ContentType
@@ -70,6 +85,11 @@ public interface Response {
      * @return Return Response
      */
     Response header(String name, String value);
+
+    /**
+     * @return return response cookies
+     */
+    Map<String, String> cookies();
 
     /**
      * add raw response cookie
@@ -130,17 +150,16 @@ public interface Response {
     Response removeCookie(String name);
 
     /**
-     * @return return response cookies
-     */
-    Map<String, String> cookies();
-
-    /**
      * Render by text
      *
      * @param text text content
      * @return Return Response
      */
-    void text(String text);
+    default void text(String text) {
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode()), Unpooled.wrappedBuffer(text.getBytes(CharsetUtil.UTF_8)));
+        this.contentType(Const.CONTENT_TYPE_TEXT);
+        this.send(response);
+    }
 
     /**
      * Render by html
@@ -148,7 +167,11 @@ public interface Response {
      * @param html html content
      * @return Return Response
      */
-    void html(String html);
+    default void html(String html) {
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode()), Unpooled.wrappedBuffer(html.getBytes(CharsetUtil.UTF_8)));
+        this.contentType(Const.CONTENT_TYPE_HTML);
+        this.send(response);
+    }
 
     /**
      * Render by json
@@ -156,7 +179,13 @@ public interface Response {
      * @param json json content
      * @return Return Response
      */
-    void json(String json);
+    default void json(String json) {
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode()), Unpooled.wrappedBuffer(json.getBytes(CharsetUtil.UTF_8)));
+        if (!WebContext.request().isIE()) {
+            this.contentType(Const.CONTENT_TYPE_JSON);
+        }
+        this.send(response);
+    }
 
     /**
      * Render by json
@@ -164,18 +193,29 @@ public interface Response {
      * @param bean
      * @return
      */
-    void json(Object bean);
+    default void json(Object bean) {
+        this.json(JsonKit.toString(bean));
+    }
 
     /**
      * send body to client
      *
      * @param data
      */
-    void body(String data);
+    default void body(String data) {
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode()), Unpooled.wrappedBuffer(data.getBytes(CharsetUtil.UTF_8)));
+        this.send(response);
+    }
 
-    void body(byte[] data);
+    default void body(byte[] data) {
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode()), Unpooled.wrappedBuffer(data));
+        this.send(response);
+    }
 
-    void body(ByteBuf byteBuf);
+    default void body(ByteBuf byteBuf) {
+        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode()), byteBuf);
+        this.send(response);
+    }
 
     /**
      * download some file to clinet
@@ -191,7 +231,9 @@ public interface Response {
      * @param view view page
      * @return Return Response
      */
-    void render(String view);
+    default void render(String view) {
+        this.render(new ModelAndView(view));
+    }
 
     /**
      * Render view And Setting Data
@@ -212,5 +254,7 @@ public interface Response {
      * @return return current response is commit
      */
     boolean isCommit();
+
+    void send(FullHttpResponse response);
 
 }

@@ -69,24 +69,6 @@ public class HttpResponse implements Response {
     }
 
     @Override
-    public Response badRequest() {
-        this.statusCode = 400;
-        return this;
-    }
-
-    @Override
-    public Response unauthorized() {
-        this.statusCode = 401;
-        return this;
-    }
-
-    @Override
-    public Response notFound() {
-        this.statusCode = 404;
-        return this;
-    }
-
-    @Override
     public Response contentType(String contentType) {
         this.contentType = contentType;
         return this;
@@ -178,51 +160,6 @@ public class HttpResponse implements Response {
     }
 
     @Override
-    public void text(String text) {
-        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(text.getBytes(CharsetUtil.UTF_8)));
-        this.contentType = Const.CONTENT_TYPE_TEXT;
-        this.send(response);
-    }
-
-    @Override
-    public void html(String html) {
-        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(html.getBytes(CharsetUtil.UTF_8)));
-        this.send(response);
-    }
-
-    @Override
-    public void json(String json) {
-        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(json.getBytes(CharsetUtil.UTF_8)));
-        if (!WebContext.request().isIE()) {
-            this.contentType = Const.CONTENT_TYPE_JSON;
-        }
-        this.send(response);
-    }
-
-    @Override
-    public void json(Object bean) {
-        this.json(JsonKit.toString(bean));
-    }
-
-    @Override
-    public void body(String data) {
-        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(data.getBytes(CharsetUtil.UTF_8)));
-        this.send(response);
-    }
-
-    @Override
-    public void body(byte[] data) {
-        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), Unpooled.wrappedBuffer(data));
-        this.send(response);
-    }
-
-    @Override
-    public void body(ByteBuf byteBuf) {
-        FullHttpResponse response = new DefaultFullHttpResponse(Const.HTTP_VERSION, HttpResponseStatus.valueOf(statusCode), byteBuf);
-        this.send(response);
-    }
-
-    @Override
     public void donwload(String fileName, File file) throws Exception {
         try {
             if (null == file || !file.exists() || !file.isFile()) {
@@ -262,11 +199,6 @@ public class HttpResponse implements Response {
     }
 
     @Override
-    public void render(String view) {
-        this.render(new ModelAndView(view));
-    }
-
-    @Override
     public void render(ModelAndView modelAndView) {
         StringWriter sw = new StringWriter();
         templateEngine.render(modelAndView, sw);
@@ -290,7 +222,8 @@ public class HttpResponse implements Response {
         return isCommit;
     }
 
-    private void send(FullHttpResponse response) {
+    @Override
+    public void send(FullHttpResponse response) {
         response.headers().add(getDefaultHeader());
         boolean keepAlive = WebContext.request().keepAlive();
         // Add 'Content-Length' header only for a keep-alive connection.

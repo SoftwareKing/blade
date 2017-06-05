@@ -2,10 +2,10 @@ package com.blade;
 
 import com.blade.ioc.Ioc;
 import com.blade.ioc.SimpleIoc;
-import com.blade.lifecycle.Event;
-import com.blade.lifecycle.EventListener;
-import com.blade.lifecycle.EventManager;
-import com.blade.mvc.RouteHandler;
+import com.blade.event.Event;
+import com.blade.event.EventListener;
+import com.blade.event.EventManager;
+import com.blade.mvc.RouteMiddleware;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.http.SessionManager;
 import com.blade.mvc.route.RouteMatcher;
@@ -67,33 +67,33 @@ public class Blade {
         return ioc;
     }
 
-    public Blade get(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.GET);
+    public Blade get(String path, RouteMiddleware routeMiddleware) {
+        routeMatcher.addRoute(path, routeMiddleware, HttpMethod.GET);
         return this;
     }
 
-    public Blade post(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.POST);
+    public Blade post(String path, RouteMiddleware routeMiddleware) {
+        routeMatcher.addRoute(path, routeMiddleware, HttpMethod.POST);
         return this;
     }
 
-    public Blade put(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.PUT);
+    public Blade put(String path, RouteMiddleware routeMiddleware) {
+        routeMatcher.addRoute(path, routeMiddleware, HttpMethod.PUT);
         return this;
     }
 
-    public Blade delete(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.DELETE);
+    public Blade delete(String path, RouteMiddleware routeMiddleware) {
+        routeMatcher.addRoute(path, routeMiddleware, HttpMethod.DELETE);
         return this;
     }
 
-    public Blade before(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.BEFORE);
+    public Blade before(String path, RouteMiddleware routeMiddleware) {
+        routeMatcher.addRoute(path, routeMiddleware, HttpMethod.BEFORE);
         return this;
     }
 
-    public Blade after(String path, RouteHandler routeHandler) {
-        routeMatcher.addRoute(path, routeHandler, HttpMethod.AFTER);
+    public Blade after(String path, RouteMiddleware routeMiddleware) {
+        routeMatcher.addRoute(path, routeMiddleware, HttpMethod.AFTER);
         return this;
     }
 

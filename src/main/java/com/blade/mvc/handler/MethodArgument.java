@@ -84,7 +84,7 @@ public final class MethodArgument {
                     } else if (argType == ModelAndView.class) {
                         args[i] = new ModelAndView();
                     } else if (argType == Map.class) {
-                        args[i] = request.querys();
+                        args[i] = request.parameters();
                     } else {
                         args[i] = parseModel(argType, request, null);
                     }

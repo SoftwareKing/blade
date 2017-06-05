@@ -4,7 +4,6 @@ import com.blade.Blade;
 import com.blade.BladeException;
 import com.blade.ioc.Ioc;
 import com.blade.kit.ReflectKit;
-import com.blade.mvc.RouteHandler;
 import com.blade.mvc.annotation.JSON;
 import com.blade.mvc.annotation.Path;
 import com.blade.mvc.http.Request;

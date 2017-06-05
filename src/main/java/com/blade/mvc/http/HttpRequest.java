@@ -2,7 +2,6 @@ package com.blade.mvc.http;
 
 import com.blade.BladeException;
 import com.blade.kit.StringKit;
-import com.blade.kit.WebKit;
 import com.blade.mvc.multipart.FileItem;
 import com.blade.server.SessionHandler;
 import io.netty.buffer.ByteBuf;
@@ -19,7 +18,7 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.util.*;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.COOKIE;
 
 /**
  * Http Request Impl
@@ -62,13 +61,7 @@ public class HttpRequest implements Request {
     private Map<String, Cookie> cookies = new HashMap<>();
     private Map<String, FileItem> fileItems = new HashMap<>();
 
-
-    public HttpRequest() {
-
-    }
-
-
-    void init(FullHttpRequest fullHttpRequest) {
+    private void init(FullHttpRequest fullHttpRequest) {
         // headers
         fullHttpRequest.headers().forEach((header) -> headers.put(header.getKey(), header.getValue()));
 
@@ -100,29 +93,7 @@ public class HttpRequest implements Request {
                     break;
                 case FileUpload:
                     FileUpload fileUpload = (FileUpload) data;
-                    if (fileUpload.isCompleted()) {
-                        String contentType = StringKit.mimeType(fileUpload.getFilename());
-                        if (null == contentType) {
-                            contentType = URLConnection.guessContentTypeFromName(fileUpload.getFilename());
-                        }
-
-                        if (fileUpload.isInMemory()) {
-                            FileItem fileItem = new FileItem(fileUpload.getName(), fileUpload.getFilename(),
-                                    contentType, fileUpload.length());
-
-                            fileItem.data(fileUpload.getByteBuf().array());
-                            fileItems.put(fileItem.name(), fileItem);
-                        } else {
-                            FileItem fileItem = new FileItem(fileUpload.getName(), fileUpload.getFilename(),
-                                    contentType, fileUpload.length());
-
-                            byte[] bytes = Files.readAllBytes(fileUpload.getFile().toPath());
-                            fileItem.data(bytes);
-
-                            fileItems.put(fileItem.name(), fileItem);
-                        }
-
-                    }
+                    parseFileUpload(fileUpload);
                     break;
                 default:
                     break;
@@ -131,6 +102,27 @@ public class HttpRequest implements Request {
             throw new BladeException(e);
         } finally {
             data.release();
+        }
+    }
+
+    private void parseFileUpload(FileUpload fileUpload) throws IOException {
+        if (fileUpload.isCompleted()) {
+            String contentType = StringKit.mimeType(fileUpload.getFilename());
+            if (null == contentType) {
+                contentType = URLConnection.guessContentTypeFromName(fileUpload.getFilename());
+            }
+            if (fileUpload.isInMemory()) {
+                FileItem fileItem = new FileItem(fileUpload.getName(), fileUpload.getFilename(),
+                        contentType, fileUpload.length());
+                fileItem.data(fileUpload.getByteBuf().array());
+                fileItems.put(fileItem.name(), fileItem);
+            } else {
+                FileItem fileItem = new FileItem(fileUpload.getName(), fileUpload.getFilename(),
+                        contentType, fileUpload.length());
+                byte[] bytes = Files.readAllBytes(fileUpload.getFile().toPath());
+                fileItem.data(bytes);
+                fileItems.put(fileItem.name(), fileItem);
+            }
         }
     }
 
@@ -172,18 +164,8 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public String userAgent() {
-        return header(USER_AGENT);
-    }
-
-    @Override
     public String protocol() {
         return this.protocol;
-    }
-
-    @Override
-    public String contextPath() {
-        return "/";
     }
 
     @Override
@@ -192,94 +174,13 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public String pathString(String name) {
-        return this.pathParams.get(name);
-    }
-
-    @Override
-    public Integer pathInt(String name) {
-        String val = pathString(name);
-        return StringKit.isNotBlank(val) ? Integer.valueOf(val) : null;
-    }
-
-    @Override
-    public Long pathLong(String name) {
-        String val = pathString(name);
-        return StringKit.isNotBlank(val) ? Long.valueOf(val) : null;
-    }
-
-    @Override
     public String queryString() {
         return this.url;
     }
 
     @Override
-    public Map<String, List<String>> querys() {
+    public Map<String, List<String>> parameters() {
         return parameters;
-    }
-
-    @Override
-    public Optional<String> query(String name) {
-        List<String> values = parameters.get(name);
-        if (null != values && values.size() > 0)
-            return Optional.of(values.get(0));
-        return Optional.empty();
-    }
-
-    @Override
-    public String query(String name, String defaultValue) {
-        Optional<String> value = query(name);
-        if (value.isPresent())
-            return value.get();
-        return defaultValue;
-    }
-
-    @Override
-    public Optional<Integer> queryInt(String name) {
-        Optional<String> value = query(name);
-        if (value.isPresent())
-            return Optional.of(Integer.valueOf(value.get()));
-        return Optional.empty();
-    }
-
-    @Override
-    public int queryInt(String name, int defaultValue) {
-        Optional<String> value = query(name);
-        if (value.isPresent())
-            return Integer.valueOf(value.get());
-        return defaultValue;
-    }
-
-    @Override
-    public Optional<Long> queryLong(String name) {
-        Optional<String> value = query(name);
-        if (value.isPresent())
-            return Optional.of(Long.valueOf(value.get()));
-        return Optional.empty();
-    }
-
-    @Override
-    public long queryLong(String name, long defaultValue) {
-        Optional<String> value = query(name);
-        if (value.isPresent())
-            return Long.valueOf(value.get());
-        return defaultValue;
-    }
-
-    @Override
-    public Optional<Double> queryDouble(String name) {
-        Optional<String> value = query(name);
-        if (value.isPresent())
-            return Optional.of(Double.valueOf(value.get()));
-        return Optional.empty();
-    }
-
-    @Override
-    public double queryDouble(String name, double defaultValue) {
-        Optional<String> value = query(name);
-        if (value.isPresent())
-            return Double.valueOf(value.get());
-        return defaultValue;
     }
 
     @Override
@@ -293,29 +194,13 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public String address() {
-        return WebKit.ipAddr(this);
-    }
-
-    @Override
     public Session session() {
         return sessionHandler.createSession(this);
     }
 
     @Override
-    public String contentType() {
-        String contentType = header(CONTENT_TYPE);
-        return null != contentType ? contentType : "Unknown";
-    }
-
-    @Override
     public boolean isSecure() {
         return false;
-    }
-
-    @Override
-    public boolean isAjax() {
-        return "XMLHttpRequest".equals(header("x-requested-with"));
     }
 
     @Override
@@ -332,22 +217,8 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public Optional<String> cookie(String name) {
-        Cookie cookie = this.cookies.get(name);
-        if (null != cookie) {
-            return Optional.of(cookie.value());
-        }
-        return Optional.empty();
-    }
-
-    @Override
     public Optional<Cookie> cookieRaw(String name) {
         return Optional.ofNullable(this.cookies.get(name));
-    }
-
-    @Override
-    public String cookie(String name, String defaultValue) {
-        return cookie(name).isPresent() ? cookie(name).get() : defaultValue;
     }
 
     @Override
@@ -362,31 +233,8 @@ public class HttpRequest implements Request {
     }
 
     @Override
-    public String header(String name) {
-        return headers.get(name);
-    }
-
-    @Override
-    public String header(String name, String defaultValue) {
-        String value = headers.get(name);
-        return null == value ? defaultValue : value;
-    }
-
-    @Override
     public boolean keepAlive() {
         return this.keepAlive;
-    }
-
-    @Override
-    public Request attribute(String name, Object value) {
-        this.attrs.put(name, value);
-        return this;
-    }
-
-    @Override
-    public <T> T attribute(String name) {
-        Object object = this.attrs.get(name);
-        return null != object ? (T) object : null;
     }
 
     @Override
@@ -397,11 +245,6 @@ public class HttpRequest implements Request {
     @Override
     public Map<String, FileItem> fileItems() {
         return fileItems;
-    }
-
-    @Override
-    public Optional<FileItem> fileItem(String name) {
-        return Optional.ofNullable(fileItems.get(name));
     }
 
     @Override

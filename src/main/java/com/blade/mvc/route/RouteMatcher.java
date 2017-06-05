@@ -5,7 +5,7 @@ import com.blade.kit.Assert;
 import com.blade.kit.PathKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
-import com.blade.mvc.RouteHandler;
+import com.blade.mvc.RouteMiddleware;
 import com.blade.mvc.http.HttpMethod;
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;
@@ -78,10 +78,10 @@ public class RouteMatcher {
         routes.forEach(this::addRoute);
     }
 
-    public Route addRoute(HttpMethod httpMethod, String path, RouteHandler handler, String methodName) throws NoSuchMethodException {
+    public Route addRoute(HttpMethod httpMethod, String path, RouteMiddleware handler, String methodName) throws NoSuchMethodException {
         Class<?> handleType = handler.getClass();
         Method method = handleType.getMethod(methodName, Request.class, Response.class);
-        return addRoute(httpMethod, path, handler, RouteHandler.class, method);
+        return addRoute(httpMethod, path, handler, RouteMiddleware.class, method);
     }
 
 
@@ -109,7 +109,7 @@ public class RouteMatcher {
         return route;
     }
 
-    public Route addRoute(String path, RouteHandler handler, HttpMethod httpMethod) {
+    public Route addRoute(String path, RouteMiddleware handler, HttpMethod httpMethod) {
         try {
             return addRoute(httpMethod, path, handler, METHOD_NAME);
         } catch (Exception e) {
@@ -118,7 +118,7 @@ public class RouteMatcher {
         }
     }
 
-    public void addRoute(String[] paths, RouteHandler handler, HttpMethod httpMethod) {
+    public void addRoute(String[] paths, RouteMiddleware handler, HttpMethod httpMethod) {
         for (String path : paths) {
             addRoute(path, handler, httpMethod);
         }

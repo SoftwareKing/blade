@@ -1,4 +1,4 @@
-package com.blade.lifecycle;
+package com.blade.event;
 
 import com.blade.Blade;
 
@@ -8,7 +8,9 @@ public class Event {
         SERVER_STARTING,
         SERVER_STARTED,
         SERVER_STOPPING,
-        SERVER_STOPPED
+        SERVER_STOPPED,
+        SESSION_CREATED,
+        SESSION_DESTROY
     }
 
     public Type eventType;
