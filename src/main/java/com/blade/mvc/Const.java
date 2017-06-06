@@ -34,6 +34,7 @@ public interface Const {
     String ENV_KEY_MONITOR_ENABLE = "app.monitor.enable";
 
     String ENV_KEY_GZIP_ENABLE = "http.gzip.enable";
+    String ENV_KEY_CORS_ENABLE = "http.cors.enable";
     String ENV_KEY_SESSION_KEY = "http.session.key";
     String ENV_KEY_SESSION_TIMEOUT = "http.session.timeout";
 
@@ -47,5 +48,9 @@ public interface Const {
     String ENV_KEY_SERVER_PORT = "server.port";
 
     String ENV_KEY_BOOT_CONF = "boot_conf";
+
+    //------终端----//
+    String TERMINAL_SERVER_ADDRESS = "--server.address";
+    String TERMINAL_SERVER_PORT = "--server.port";
 
 }

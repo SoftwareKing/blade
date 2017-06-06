@@ -11,6 +11,9 @@ import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerExpectContinueHandler;
+import io.netty.handler.codec.http.cors.CorsConfig;
+import io.netty.handler.codec.http.cors.CorsConfigBuilder;
+import io.netty.handler.codec.http.cors.CorsHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
@@ -26,18 +29,22 @@ public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private boolean enableGzip;
     private boolean enableMonitor;
+    private boolean enableCors;
 
     public HttpServerInitializer(Blade blade, SslContext sslCtx) {
         this.blade = blade;
         this.sslCtx = null;
         this.enableMonitor = blade.environment().getBoolean(Const.ENV_KEY_MONITOR_ENABLE, true);
         this.enableGzip = blade.environment().getBoolean(Const.ENV_KEY_GZIP_ENABLE, false);
+        this.enableCors = blade.environment().getBoolean(Const.ENV_KEY_CORS_ENABLE, false);
     }
 
 
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline p = ch.pipeline();
+
+
         if (sslCtx != null) {
             p.addLast(sslCtx.newHandler(ch.alloc()));
         }
@@ -56,6 +63,10 @@ public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
         p.addLast(new HttpServerExpectContinueHandler());
         p.addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
         p.addLast(new ChunkedWriteHandler());
+        if (enableCors) {
+            CorsConfig corsConfig = CorsConfigBuilder.forAnyOrigin().allowNullOrigin().allowCredentials().build();
+            p.addLast(new CorsHandler(corsConfig));
+        }
         p.addLast(new HttpServerHandler(blade, ci));
     }
 }

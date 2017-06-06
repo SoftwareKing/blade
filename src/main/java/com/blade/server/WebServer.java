@@ -13,7 +13,6 @@ import com.blade.ioc.reader.ClassInfo;
 import com.blade.kit.BladeKit;
 import com.blade.kit.ReflectKit;
 import com.blade.kit.StringKit;
-import com.blade.mvc.Const;
 import com.blade.mvc.WebContext;
 import com.blade.mvc.annotation.Path;
 import com.blade.mvc.hook.WebHook;
@@ -36,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.blade.mvc.Const.CLASSPATH;
+import static com.blade.mvc.Const.*;
 
 /**
  * @author biezhi
@@ -66,7 +65,8 @@ public class WebServer {
         log.info("Blade environment: file.encoding\t=> {}", System.getProperty("file.encoding"));
         log.info("Blade environment: classpath\t\t=> {}", CLASSPATH);
 
-        this.loadConfig();
+        this.loadConfig(args);
+
         this.initConfig();
 
         WebContext.init(blade, "/", false);
@@ -124,11 +124,11 @@ public class WebServer {
                 .handler(new LoggingHandler(LogLevel.DEBUG))
                 .childHandler(new HttpServerInitializer(blade, sslCtx));
 
-        String address = environment.get(Const.ENV_KEY_SERVER_ADDRESS, Const.DEFAULT_SERVER_ADDRESS);
-        int port = environment.getInt(Const.ENV_KEY_SERVER_PORT, Const.DEFAULT_SERVER_PORT);
+        String address = environment.get(ENV_KEY_SERVER_ADDRESS, DEFAULT_SERVER_ADDRESS);
+        int port = environment.getInt(ENV_KEY_SERVER_PORT, DEFAULT_SERVER_PORT);
 
         channel = b.bind(address, port).sync().channel();
-        String appName = environment.get(Const.ENV_KEY_APP_NAME, "Blade");
+        String appName = environment.get(ENV_KEY_APP_NAME, "Blade");
 
         log.info("⬢ {} initialize successfully, Time elapsed: {} ms.", appName, System.currentTimeMillis() - startTime);
         log.info("⬢ Blade start with {}:{}", address, port);
@@ -159,9 +159,9 @@ public class WebServer {
 
     }
 
-    private void loadConfig() {
+    private void loadConfig(String[] args) {
 
-        String bootConf = blade.environment().get(Const.ENV_KEY_BOOT_CONF, "classpath:app.properties");
+        String bootConf = blade.environment().get(ENV_KEY_BOOT_CONF, "classpath:app.properties");
 
         Environment bootEnv = Environment.of(bootConf);
 
@@ -169,28 +169,38 @@ public class WebServer {
 
         blade.register(environment);
 
+        // load terminal param
+        if (!BladeKit.isEmpty(args)) {
+            for (int i = 0; i < args.length; i++) {
+                if (TERMINAL_SERVER_ADDRESS.equals(args[i])) {
+                    environment.set(ENV_KEY_SERVER_ADDRESS, args[++i]);
+                } else if (TERMINAL_SERVER_PORT.equals(args[i])) {
+                    environment.set(ENV_KEY_SERVER_PORT, args[++i]);
+                }
+            }
+        }
     }
 
     private void initConfig() {
 
         if (null != blade.bootClass()) {
-            if (blade.scanPackages().size() == 1 && blade.scanPackages().contains(Const.PLUGIN_PACKAGE_NAME)) {
+            if (blade.scanPackages().size() == 1 && blade.scanPackages().contains(PLUGIN_PACKAGE_NAME)) {
                 blade.scanPackages(blade.bootClass().getPackage().getName());
             }
         }
 
         DefaultUI.printBanner();
 
-        String statics = environment.get(Const.ENV_KEY_STATIC_DIRS, "");
+        String statics = environment.get(ENV_KEY_STATIC_DIRS, "");
         if (StringKit.isNotBlank(statics)) {
             blade.addStatics(statics.split(","));
         }
 
-        if (environment.getBoolean(Const.ENV_KEY_MONITOR_ENABLE, true)) {
+        if (environment.getBoolean(ENV_KEY_MONITOR_ENABLE, true)) {
             DefaultUI.registerStatus(blade);
         }
 
-        String templatePath = environment.get(Const.ENV_KEY_TEMPLATE_PATH, "templates");
+        String templatePath = environment.get(ENV_KEY_TEMPLATE_PATH, "templates");
         if (templatePath.charAt(0) == '/') {
             templatePath = templatePath.substring(1);
         }

@@ -173,8 +173,13 @@ public class Blade {
         return this.bootClass;
     }
 
-    public Blade enableMonitor(boolean openMonitor) {
-        this.environment(ENV_KEY_MONITOR_ENABLE, openMonitor);
+    public Blade enableMonitor(boolean enableMonitor) {
+        this.environment(ENV_KEY_MONITOR_ENABLE, enableMonitor);
+        return this;
+    }
+
+    public Blade enableCors(boolean enableCors) {
+        this.environment(ENV_KEY_CORS_ENABLE, enableCors);
         return this;
     }
 
@@ -266,6 +271,10 @@ public class Blade {
 
     public Blade start(Class<?> mainCls, String... args) {
         return this.start(mainCls, DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, args);
+    }
+
+    public Blade start(String... args) {
+        return this.start(null, DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, args);
     }
 
     public Blade start(Class<?> bootClass, String address, int port, String... args) {
