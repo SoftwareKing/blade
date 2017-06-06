@@ -1,6 +1,5 @@
 package com.blade.kit;
 
-import com.blade.ioc.annotation.Inject;
 import com.blade.mvc.Const;
 
 import java.time.Instant;
@@ -97,19 +96,19 @@ public final class DateKit {
         return Date.from(Instant.ofEpochSecond(unixTime));
     }
 
+    private static final DateTimeFormatter GMT_FMT = DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US);
+    private static final ZoneId GMT_ZONE_ID = ZoneId.of("GMT");
+
     public static String gmtDate() {
-        ZoneId zone = ZoneId.of("GMT");
-        return DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US).format(LocalDateTime.now().atZone(zone));
+        return GMT_FMT.format(LocalDateTime.now().atZone(GMT_ZONE_ID));
     }
 
     public static String gmtDate(LocalDateTime localDateTime) {
-        ZoneId zone = ZoneId.of("GMT");
-        return DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US).format(localDateTime.atZone(zone));
+        return GMT_FMT.format(localDateTime.atZone(GMT_ZONE_ID));
     }
 
     public static String gmtDate(Date date) {
-        ZoneId zone = ZoneId.of("GMT");
-        return DateTimeFormatter.ofPattern(Const.HTTP_DATE_FORMAT, Locale.US).format(LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()).atZone(zone));
+        return GMT_FMT.format(LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault()).atZone(GMT_ZONE_ID));
 
     }
 

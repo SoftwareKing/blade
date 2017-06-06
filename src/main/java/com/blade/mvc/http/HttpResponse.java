@@ -238,7 +238,8 @@ public class HttpResponse implements Response {
     }
 
     private HttpHeaders getDefaultHeader() {
-        headers.set(DATE, DateKit.gmtDate());
+//        headers.set(DATE, DateKit.gmtDate());
+        headers.set(DATE, "Tue, 06 Jun 2017 11:03:38 GMT");
         headers.set(CONTENT_TYPE, this.contentType);
         headers.set(SERVER, "blade/" + Const.VERSION);
         this.cookies.forEach(cookie -> headers.add(SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie)));
