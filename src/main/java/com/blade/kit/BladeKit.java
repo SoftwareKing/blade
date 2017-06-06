@@ -6,9 +6,7 @@ import com.blade.ioc.FieldInjector;
 import com.blade.ioc.Ioc;
 import com.blade.ioc.annotation.Inject;
 import com.blade.ioc.annotation.InjectWith;
-import com.blade.kit.ason.Ason;
 import com.blade.mvc.http.HttpMethod;
-import com.blade.mvc.http.Request;
 
 import java.lang.reflect.Field;
 import java.util.*;

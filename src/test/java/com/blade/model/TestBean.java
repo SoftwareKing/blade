@@ -2,7 +2,6 @@ package com.blade.model;
 
 import com.blade.kit.json.JsonIgnore;
 import com.blade.kit.json.JsonProperty;
-import netty_hello.Role;
 
 import java.util.ArrayList;
 import java.util.Arrays;
