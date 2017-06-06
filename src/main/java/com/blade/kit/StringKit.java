@@ -1,6 +1,6 @@
 package com.blade.kit;
 
-import com.blade.mvc.multipart.MIMEType;
+import com.blade.mvc.multipart.MimeType;
 
 import java.util.Random;
 
@@ -116,7 +116,7 @@ public final class StringKit {
         if (null == ext) {
             return null;
         }
-        return MIMEType.get(ext);
+        return MimeType.get(ext);
     }
 
 }

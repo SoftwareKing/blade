@@ -26,6 +26,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.blade.mvc.Const.*;
 
@@ -45,9 +47,9 @@ import static com.blade.mvc.Const.*;
  * @author biezhi
  *         2017/5/31
  */
-public class WebServer implements Server {
+public class NettyServer implements Server {
 
-    private static final Logger log = LoggerFactory.getLogger(WebServer.class);
+    private static final Logger log = LoggerFactory.getLogger(NettyServer.class);
 
     private Blade blade;
     private Environment environment;
@@ -55,13 +57,18 @@ public class WebServer implements Server {
     private ExecutorService bossExecutors;
     private ExecutorService workerExecutors;
     private int threadCount;
+    private int workers;
     private int backlog;
     private int linger;
     private int receiveBufferSize;
-    private int connectTimeoutMillis;
+    private int sendBufferSize;
+    private int connectTimeout;
+    private int highWaterMark;
+    private int lowWaterMark;
 
     private boolean tcpNodelay;
     private boolean keepAlive;
+    private boolean reuseAddress;
 
     private EventLoopGroup bossGroup, workerGroup;
     private Channel channel;
@@ -74,12 +81,12 @@ public class WebServer implements Server {
         this.environment = blade.environment();
 
         long initStart = System.currentTimeMillis();
-        log.info("Blade environment: jdk.version\t=> {}", System.getProperty("java.version"));
-        log.info("Blade environment: user.dir\t\t=> {}", System.getProperty("user.dir"));
-        log.info("Blade environment: java.io.tmpdir\t=> {}", System.getProperty("java.io.tmpdir"));
-        log.info("Blade environment: user.timezone\t=> {}", System.getProperty("user.timezone"));
-        log.info("Blade environment: file.encoding\t=> {}", System.getProperty("file.encoding"));
-        log.info("Blade environment: classpath\t\t=> {}", CLASSPATH);
+        log.info("Environment: jdk.version\t\t=> {}", System.getProperty("java.version"));
+        log.info("Environment: user.dir\t\t\t=> {}", System.getProperty("user.dir"));
+        log.info("Environment: java.io.tmpdir\t=> {}", System.getProperty("java.io.tmpdir"));
+        log.info("Environment: user.timezone\t=> {}", System.getProperty("user.timezone"));
+        log.info("Environment: file.encoding\t=> {}", System.getProperty("file.encoding"));
+        log.info("Environment: classpath\t\t=> {}", CLASSPATH);
 
         this.loadConfig(args);
 
@@ -130,16 +137,18 @@ public class WebServer implements Server {
 
         // Configure the server.
         this.bossGroup = new NioEventLoopGroup(threadCount, bossExecutors);
-        this.workerGroup = new NioEventLoopGroup(0, workerExecutors);
+        this.workerGroup = new NioEventLoopGroup(workers, workerExecutors);
 
         ServerBootstrap b = new ServerBootstrap();
         b.option(ChannelOption.SO_BACKLOG, backlog);
-        b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis);
-        b.option(ChannelOption.SO_RCVBUF, receiveBufferSize);
+//        b.option(ChannelOption.TCP_NODELAY, tcpNodelay);
+//        b.option(ChannelOption.SO_KEEPALIVE, keepAlive);
 
-        b.childOption(ChannelOption.TCP_NODELAY, tcpNodelay);
-        b.childOption(ChannelOption.SO_KEEPALIVE, keepAlive);
-        b.childOption(ChannelOption.SO_LINGER, linger);
+//        b.childOption(ChannelOption.SO_RCVBUF, receiveBufferSize);
+//        b.childOption(ChannelOption.SO_SNDBUF, sendBufferSize);
+//        b.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(lowWaterMark, highWaterMark));
+//        b.childOption(ChannelOption.SO_REUSEADDR, reuseAddress);
+//        b.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) TimeUnit.SECONDS.toMillis(connectTimeout));
 
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
@@ -194,10 +203,14 @@ public class WebServer implements Server {
         // load terminal param
         if (!BladeKit.isEmpty(args)) {
             for (int i = 0; i < args.length; i++) {
-                if (TERMINAL_SERVER_ADDRESS.equals(args[i])) {
-                    environment.set(ENV_KEY_SERVER_ADDRESS, args[++i]);
-                } else if (TERMINAL_SERVER_PORT.equals(args[i])) {
-                    environment.set(ENV_KEY_SERVER_PORT, args[++i]);
+                if (args[i].startsWith(TERMINAL_SERVER_ADDRESS)) {
+                    int pos = args[i].indexOf(TERMINAL_SERVER_ADDRESS) + TERMINAL_SERVER_ADDRESS.length();
+                    String address = args[i].substring(pos);
+                    environment.set(ENV_KEY_SERVER_ADDRESS, address);
+                } else if (args[i].startsWith(TERMINAL_SERVER_PORT)) {
+                    int pos = args[i].indexOf(TERMINAL_SERVER_PORT) + TERMINAL_SERVER_PORT.length();
+                    String port = args[i].substring(pos);
+                    environment.set(ENV_KEY_SERVER_PORT, port);
                 }
             }
         }
@@ -236,14 +249,16 @@ public class WebServer implements Server {
 
         bossExecutors = Executors.newCachedThreadPool(new NamedThreadFactory("boss@" + boosGroupName));
         workerExecutors = Executors.newCachedThreadPool(new NamedThreadFactory("worker@" + workerGroupName));
+
         threadCount = environment.getInt(ENV_KEY_NETTY_THREAD_COUNT, 1);
+        workers = environment.getInt(ENV_KEY_NETTY_WORKERS, 0);
         backlog = environment.getInt(ENV_KEY_NETTY_SO_BACKLOG, 1024);
         tcpNodelay = environment.getBoolean(ENV_KEY_NETTY_CHILD_TCP_NODELAY, true);
         keepAlive = environment.getBoolean(ENV_KEY_NETTY_CHILD_KEEPALIVE, true);
-        linger = environment.getInt(ENV_KEY_NETTY_CHILD_LINGER, 0);
-        connectTimeoutMillis = environment.getInt(ENV_KEY_NETTY_CONN_TIMEOUT, 10_000);
-        receiveBufferSize = environment.getInt(ENV_KEY_NETTY_REECEIVE_BUF, 1);
-
+        linger = environment.getInt(ENV_KEY_NETTY_CHILD_LINGER, -1);
+        connectTimeout = environment.getInt(ENV_KEY_NETTY_CONN_TIMEOUT, 10_000);
+        receiveBufferSize = environment.getInt(ENV_KEY_NETTY_REECEIVE_BUF, 32);
+        sendBufferSize = environment.getInt(ENV_KEY_NETTY_SEND_BUF, 32);
     }
 
     @Override

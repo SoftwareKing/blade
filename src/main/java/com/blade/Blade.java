@@ -14,7 +14,7 @@ import com.blade.mvc.route.RouteHandler;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.template.DefaultEngine;
 import com.blade.mvc.ui.template.TemplateEngine;
-import com.blade.server.netty.WebServer;
+import com.blade.server.netty.NettyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ public class Blade {
     private boolean started = false;
 
     private RouteMatcher routeMatcher = new RouteMatcher();
-    private WebServer webServer = new WebServer();
+    private NettyServer nettyServer = new NettyServer();
     private Class<?> bootClass;
 
     private List<WebHook> middlewares = new ArrayList<>();
@@ -285,9 +285,9 @@ public class Blade {
             eventManager.fireEvent(EventType.SERVER_STARTING, this);
             Thread thread = new Thread(() -> {
                 try {
-                    webServer.start(Blade.this, args);
+                    nettyServer.start(Blade.this, args);
                     latch.countDown();
-                    webServer.join();
+                    nettyServer.join();
                 } catch (Exception e) {
                     startupExceptionHandler.accept(e);
                 }
@@ -316,7 +316,7 @@ public class Blade {
 
     public void stop() {
         eventManager.fireEvent(EventType.SERVER_STOPPING, this);
-        webServer.stop();
+        nettyServer.stop();
         eventManager.fireEvent(EventType.SERVER_STOPPED, this);
     }
 

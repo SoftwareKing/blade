@@ -3,7 +3,7 @@ package com.blade.mvc.multipart;
 import java.util.HashMap;
 import java.util.Map;
 
-public interface MIMEType {
+public interface MimeType {
 
     String APPLICATION = "application/octet-stream";
 

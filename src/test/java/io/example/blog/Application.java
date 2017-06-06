@@ -29,7 +29,7 @@ public class Application {
                 .get("/json", ((request, response) -> response.json(map)))
                 .showFileList(true)
                 .listen(9001)
-                .start(Application.class);
+                .start(Application.class, args);
     }
 
 }
