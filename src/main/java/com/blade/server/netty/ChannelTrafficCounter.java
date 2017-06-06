@@ -1,4 +1,4 @@
-package com.blade.server;
+package com.blade.server.netty;
 
 import com.blade.metric.Connection;
 import io.netty.channel.ChannelHandlerContext;

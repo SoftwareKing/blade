@@ -1,4 +1,4 @@
-package com.blade.server;
+package com.blade.server.netty;
 
 import com.blade.Blade;
 import com.blade.Environment;
@@ -20,6 +20,8 @@ import com.blade.mvc.route.RouteBuilder;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.DefaultUI;
 import com.blade.mvc.ui.template.DefaultEngine;
+import com.blade.server.NamedThreadFactory;
+import com.blade.server.Server;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -34,6 +36,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.blade.mvc.Const.*;
 
@@ -41,19 +45,31 @@ import static com.blade.mvc.Const.*;
  * @author biezhi
  *         2017/5/31
  */
-public class WebServer {
+public class WebServer implements Server {
 
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
 
     private Blade blade;
     private Environment environment;
 
+    private ExecutorService bossExecutors;
+    private ExecutorService workerExecutors;
+    private int threadCount;
+    private int backlog;
+    private int linger;
+    private int receiveBufferSize;
+    private int connectTimeoutMillis;
+
+    private boolean tcpNodelay;
+    private boolean keepAlive;
+
     private EventLoopGroup bossGroup, workerGroup;
     private Channel channel;
 
     private RouteBuilder routeBuilder;
 
-    public void initAndStart(Blade blade, String[] args) throws Exception {
+    @Override
+    public void start(Blade blade, String[] args) throws Exception {
         this.blade = blade;
         this.environment = blade.environment();
 
@@ -113,11 +129,17 @@ public class WebServer {
         boolean SSL = false;
 
         // Configure the server.
-        this.bossGroup = new NioEventLoopGroup(1);
-        this.workerGroup = new NioEventLoopGroup();
+        this.bossGroup = new NioEventLoopGroup(threadCount, bossExecutors);
+        this.workerGroup = new NioEventLoopGroup(0, workerExecutors);
 
         ServerBootstrap b = new ServerBootstrap();
-        b.option(ChannelOption.SO_BACKLOG, 1024);
+        b.option(ChannelOption.SO_BACKLOG, backlog);
+        b.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMillis);
+        b.option(ChannelOption.SO_RCVBUF, receiveBufferSize);
+
+        b.childOption(ChannelOption.TCP_NODELAY, tcpNodelay);
+        b.childOption(ChannelOption.SO_KEEPALIVE, keepAlive);
+        b.childOption(ChannelOption.SO_LINGER, linger);
 
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
@@ -130,7 +152,7 @@ public class WebServer {
         channel = b.bind(address, port).sync().channel();
         String appName = environment.get(ENV_KEY_APP_NAME, "Blade");
 
-        log.info("⬢ {} initialize successfully, Time elapsed: {} ms.", appName, System.currentTimeMillis() - startTime);
+        log.info("⬢ {} initialize successfully, Time elapsed: {} ms", appName, System.currentTimeMillis() - startTime);
         log.info("⬢ Blade start with {}:{}", address, port);
         log.info("⬢ Open your web browser and navigate to {}://{}:{} ⚡", (SSL ? "https" : "http"), address.replace("0.0.0.0", "127.0.0.1"), port);
 
@@ -196,7 +218,7 @@ public class WebServer {
             blade.addStatics(statics.split(","));
         }
 
-        if (environment.getBoolean(ENV_KEY_MONITOR_ENABLE, true)) {
+        if (environment.getBoolean(ENV_KEY_MONITOR_ENABLE, false)) {
             DefaultUI.registerStatus(blade);
         }
 
@@ -208,9 +230,30 @@ public class WebServer {
             templatePath = templatePath.substring(0, templatePath.length() - 1);
         }
         DefaultEngine.TEMPLATE_PATH = templatePath;
+
+        String boosGroupName = environment.get(ENV_KEY_NETTY_BOOS_GROUP_NAME, "pool");
+        String workerGroupName = environment.get(ENV_KEY_NETTY_WORKER_GROUP_NAME, "pool");
+
+        bossExecutors = Executors.newCachedThreadPool(new NamedThreadFactory("boss@" + boosGroupName));
+        workerExecutors = Executors.newCachedThreadPool(new NamedThreadFactory("worker@" + workerGroupName));
+        threadCount = environment.getInt(ENV_KEY_NETTY_THREAD_COUNT, 1);
+        backlog = environment.getInt(ENV_KEY_NETTY_SO_BACKLOG, 1024);
+        tcpNodelay = environment.getBoolean(ENV_KEY_NETTY_CHILD_TCP_NODELAY, true);
+        keepAlive = environment.getBoolean(ENV_KEY_NETTY_CHILD_KEEPALIVE, true);
+        linger = environment.getInt(ENV_KEY_NETTY_CHILD_LINGER, 0);
+        connectTimeoutMillis = environment.getInt(ENV_KEY_NETTY_CONN_TIMEOUT, 10_000);
+        receiveBufferSize = environment.getInt(ENV_KEY_NETTY_REECEIVE_BUF, 1);
+
     }
 
+    @Override
     public void stop() {
+        if (bossExecutors != null) {
+            bossExecutors.shutdown();
+        }
+        if (workerExecutors != null) {
+            workerExecutors.shutdown();
+        }
         if (this.bossGroup != null) {
             this.bossGroup.shutdownGracefully();
         }
@@ -219,6 +262,7 @@ public class WebServer {
         }
     }
 
+    @Override
     public void join() throws InterruptedException {
         try {
             channel.closeFuture().sync();

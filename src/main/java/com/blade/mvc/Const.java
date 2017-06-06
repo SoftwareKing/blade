@@ -46,6 +46,16 @@ public interface Const {
 
     String ENV_KEY_SERVER_ADDRESS = "server.address";
     String ENV_KEY_SERVER_PORT = "server.port";
+    String ENV_KEY_NETTY_BOOS_GROUP_NAME = "server.netty.boos-name";
+    String ENV_KEY_NETTY_WORKER_GROUP_NAME = "server.netty.worker-name";
+    String ENV_KEY_NETTY_THREAD_COUNT = "server.netty.thread-count";
+    String ENV_KEY_NETTY_SO_BACKLOG = "server.netty.backlog";
+    String ENV_KEY_NETTY_CONN_TIMEOUT = "server.netty.conn-timeout";
+    String ENV_KEY_NETTY_REECEIVE_BUF = "server.netty.receive-buf";
+
+    String ENV_KEY_NETTY_CHILD_TCP_NODELAY = "server.netty.child.tcp-nodelay";
+    String ENV_KEY_NETTY_CHILD_KEEPALIVE = "server.netty.child.keep-alive";
+    String ENV_KEY_NETTY_CHILD_LINGER = "server.netty.child.linger";
 
     String ENV_KEY_BOOT_CONF = "boot_conf";
 

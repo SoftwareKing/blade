@@ -1,4 +1,4 @@
-package com.blade.server;
+package com.blade.server.netty;
 
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.ChannelProgressiveFutureListener;

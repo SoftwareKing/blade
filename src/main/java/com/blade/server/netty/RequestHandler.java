@@ -1,4 +1,4 @@
-package com.blade.server;
+package com.blade.server.netty;
 
 import com.blade.mvc.http.Request;
 import com.blade.mvc.http.Response;

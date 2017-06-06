@@ -4,7 +4,7 @@ import com.blade.BladeException;
 import com.blade.kit.StringKit;
 import com.blade.mvc.multipart.FileItem;
 import com.blade.mvc.route.Route;
-import com.blade.server.SessionHandler;
+import com.blade.server.netty.SessionHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;

@@ -14,7 +14,7 @@ import com.blade.mvc.route.RouteHandler;
 import com.blade.mvc.route.RouteMatcher;
 import com.blade.mvc.ui.template.DefaultEngine;
 import com.blade.mvc.ui.template.TemplateEngine;
-import com.blade.server.WebServer;
+import com.blade.server.netty.WebServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -285,14 +285,14 @@ public class Blade {
             eventManager.fireEvent(EventType.SERVER_STARTING, this);
             Thread thread = new Thread(() -> {
                 try {
-                    webServer.initAndStart(Blade.this, args);
+                    webServer.start(Blade.this, args);
                     latch.countDown();
                     webServer.join();
                 } catch (Exception e) {
                     startupExceptionHandler.accept(e);
                 }
             });
-            thread.setName("blade-start-thread");
+            thread.setName("_(:3」∠)_");
             thread.start();
             started = true;
         } catch (Exception e) {

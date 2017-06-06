@@ -1,4 +1,4 @@
-package com.blade.server;
+package com.blade.server.netty;
 
 import com.blade.Blade;
 import com.blade.BladeException;
