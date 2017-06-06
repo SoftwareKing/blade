@@ -60,6 +60,10 @@ public class Blade {
     private Blade() {
     }
 
+    public static Blade of() {
+        return new Blade();
+    }
+
     public static Blade me() {
         return new Blade();
     }
