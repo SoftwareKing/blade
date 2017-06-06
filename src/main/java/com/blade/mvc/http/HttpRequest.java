@@ -56,7 +56,6 @@ public class HttpRequest implements Request {
     private boolean keepAlive;
 
 
-
     private Map<String, String> headers = new HashMap<>();
     private Map<String, Object> attrs = new HashMap<>();
     private Map<String, List<String>> parameters = new HashMap<>();
@@ -273,8 +272,9 @@ public class HttpRequest implements Request {
         httpRequest.keepAlive = HttpUtil.isKeepAlive(fullHttpRequest);
         String remoteAddr = ctx.channel().remoteAddress().toString();
         httpRequest.host = StringKit.isNotBlank(remoteAddr) ? remoteAddr.substring(1) : "Unknown";
-        httpRequest.uri = new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).path();
-        httpRequest.url = new QueryStringDecoder(fullHttpRequest.uri(), CharsetUtil.UTF_8).uri();
+        httpRequest.url = fullHttpRequest.uri();
+        int pathEndPos = httpRequest.url.indexOf('?');
+        httpRequest.uri = pathEndPos < 0 ? httpRequest.url : httpRequest.url.substring(0, pathEndPos);
         httpRequest.protocol = fullHttpRequest.protocolVersion().text();
         httpRequest.method = fullHttpRequest.method().name();
         httpRequest.init(fullHttpRequest);
