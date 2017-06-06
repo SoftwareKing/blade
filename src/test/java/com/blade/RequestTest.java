@@ -1,7 +1,8 @@
 package com.blade;
 
 import com.blade.kit.Assert;
-import com.blade.kit.ason.Ason;
+import com.blade.kit.JsonKit;
+import com.blade.kit.json.Ason;
 import com.blade.mvc.Const;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -38,18 +39,18 @@ public class RequestTest extends BaseTestCase {
     public void testGetCookies() throws Exception {
         start(app.get("/cookie", (req, res) -> res.json(req.cookies())));
         String body = bodyToString("/cookie");
-        Ason ason = new Ason(body);
-        Assert.notNull(ason.get(Const.ENV_KEY_SESSION_KEY), "session is null");
+        Ason ason = JsonKit.toAson(body);
+        Assert.notNull(ason.toString(), "{}");
     }
 
     @Test
     public void testMultipleCookies() throws Exception {
         start(app.get("/cookie", (req, res) -> res.json(req.cookies())));
         String body = get("/cookie").header("Cookie", "c1=a;c2=b;c3=c").body();
-        Ason ason = new Ason(body);
-        assertThat(ason.get("c1"), is("a"));
-        assertThat(ason.get("c2"), is("b"));
-        assertThat(ason.get("c3"), is("c"));
+        Ason ason = JsonKit.toAson(body);
+        assertThat(ason.getString("c1"), is("a"));
+        assertThat(ason.getString("c2"), is("b"));
+        assertThat(ason.getString("c3"), is("c"));
     }
 
     @Test
@@ -72,14 +73,14 @@ public class RequestTest extends BaseTestCase {
         );
 
         String body1 = get("/user1/10").body();
-        Ason ason1 = new Ason(body1);
-        assertThat(ason1.get("id"), is("10"));
+        Ason ason1 = JsonKit.toAson(body1);
+        assertThat(ason1.getString("id"), is("10"));
 
         String body2 = get("/user2/biezhi/20").body();
-        Ason ason2 = new Ason(body2);
+        Ason ason2 = JsonKit.toAson(body2);
 
-        assertThat(ason2.get("age"), is("20"));
-        assertThat(ason2.get("name"), is("biezhi"));
+        assertThat(ason2.getString("age"), is("20"));
+        assertThat(ason2.getString("name"), is("biezhi"));
     }
 
     @Test
@@ -230,11 +231,11 @@ public class RequestTest extends BaseTestCase {
                 .header("h1", "a1").header("h2", "a2").header("h3", "a3")
                 .body();
 
-        Ason ason = new Ason(body);
+        Ason ason = JsonKit.toAson(body);
 
-        assertThat(ason.get("h1"), is("a1"));
-        assertThat(ason.get("h2"), is("a2"));
-        assertThat(ason.get("h3"), is("a3"));
+        assertThat(ason.getString("h1"), is("a1"));
+        assertThat(ason.getString("h2"), is("a2"));
+        assertThat(ason.getString("h3"), is("a3"));
     }
 
     @Test
@@ -282,10 +283,10 @@ public class RequestTest extends BaseTestCase {
         );
 
         String body = post("/upload1").part("file1", "a.txt", new File(Const.CLASSPATH + "log_config.txt")).body();
-        assertThat(body, is("{\"file1\":{\"fileName\":\"a.txt\",\"name\":\"file1\",\"length\":1551,\"contentType\":\"text/plain\"}}"));
+        assertThat(body, is("{\"file1\":{\"name\":\"file1\",\"fileName\":\"a.txt\",\"contentType\":\"text/plain\",\"length\":1551}}"));
 
         body = post("/upload2").part("file1", "a.txt", new File(Const.CLASSPATH + "log_config.txt")).body();
-        assertThat(body, is("{\"fileName\":\"a.txt\",\"name\":\"file1\",\"length\":1551,\"contentType\":\"text/plain\"}"));
+        assertThat(body, is("{\"name\":\"file1\",\"fileName\":\"a.txt\",\"contentType\":\"text/plain\",\"length\":1551}"));
     }
 
 }

@@ -263,17 +263,18 @@ public class NettyServer implements Server {
 
     @Override
     public void stop() {
-        if (bossExecutors != null) {
-            bossExecutors.shutdown();
-        }
-        if (workerExecutors != null) {
-            workerExecutors.shutdown();
-        }
+
         if (this.bossGroup != null) {
             this.bossGroup.shutdownGracefully();
         }
         if (this.workerGroup != null) {
             this.workerGroup.shutdownGracefully();
+        }
+        if (bossExecutors != null) {
+            bossExecutors.shutdown();
+        }
+        if (workerExecutors != null) {
+            workerExecutors.shutdown();
         }
     }
 

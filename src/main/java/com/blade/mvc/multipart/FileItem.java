@@ -1,6 +1,7 @@
 package com.blade.mvc.multipart;
 
-import com.blade.kit.ason.AsonIgnore;
+
+import com.blade.kit.json.JsonIgnore;
 
 /**
  * HTTP multipart/form-data Request
@@ -15,7 +16,7 @@ public class FileItem {
     private String contentType;
     private long length;
 
-    @AsonIgnore
+    @JsonIgnore
     private byte[] data;
 
     public FileItem(String name, String fileName, String contentType, long length) {
