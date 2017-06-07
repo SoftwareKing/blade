@@ -83,10 +83,10 @@ public class NettyServer implements Server {
         long initStart = System.currentTimeMillis();
         log.info("Environment: jdk.version\t\t=> {}", System.getProperty("java.version"));
         log.info("Environment: user.dir\t\t\t=> {}", System.getProperty("user.dir"));
-        log.info("Environment: java.io.tmpdir\t=> {}", System.getProperty("java.io.tmpdir"));
-        log.info("Environment: user.timezone\t=> {}", System.getProperty("user.timezone"));
-        log.info("Environment: file.encoding\t=> {}", System.getProperty("file.encoding"));
-        log.info("Environment: classpath\t\t=> {}", CLASSPATH);
+        log.info("Environment: java.io.tmpdir\t\t=> {}", System.getProperty("java.io.tmpdir"));
+        log.info("Environment: user.timezone\t\t=> {}", System.getProperty("user.timezone"));
+        log.info("Environment: file.encoding\t\t=> {}", System.getProperty("file.encoding"));
+        log.info("Environment: classpath\t\t\t=> {}", CLASSPATH);
 
         this.loadConfig(args);
 

@@ -101,17 +101,17 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         String uri = request.uri();
         log.debug("{}\t{}\t{}", request.protocol(), request.method(), uri);
 
-        if (isStaticFile(uri)) {
-            staticFileHandler.handle(ctx, request, response);
-            return;
-        }
-
         // write session
         WebContext.set(new WebContext(request, response));
 
         // web hook
         if (!invokeHook(routeMatcher.getBefore(uri), request, response)) {
             this.sendFinish(response);
+            return;
+        }
+
+        if (isStaticFile(uri)) {
+            staticFileHandler.handle(ctx, request, response);
             return;
         }
 
